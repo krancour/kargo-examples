@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-test
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-stage
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-prod
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-test
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-env: kargo-demo:test
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/<username>/kargo-demo-gitops.git
+    targetRevision: placeholder # We will move new commits into test by updating this field
+    path: env/test
+    kustomize:
+      images:
+      - nginx=nginx:1.24.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-test
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-stage
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-env: kargo-demo:stage
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/<username>/kargo-demo-gitops.git
+    targetRevision: placeholder # We will move new commits into stage by updating this field
+    path: env/stage
+    kustomize:
+      images:
+      - nginx=nginx:1.24.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-stage
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-prod
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-env: kargo-demo:prod
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/<username>/kargo-demo-gitops.git
+    targetRevision: placeholder # We will move new commits into prod by updating this field
+    path: env/prod
+    kustomize:
+      images:
+      - nginx=nginx:1.24.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-prod

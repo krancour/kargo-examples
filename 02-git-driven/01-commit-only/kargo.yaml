@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: test  
+  namespace: kargo-demo
+environment: test
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: test
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    repos:
+      git:
+      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        branch: kustomize # Watch this branch for new commits
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      writeBranch: env/test # Write to env-specific branch
+    argoCDAppUpdates:
+    - appName: kargo-demo-test
+      appNamespace: argocd
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-test
+      appNamespace: argocd
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: stage
+  namespace: kargo-demo
+environment: stage
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: stage
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    upstreamEnvs:
+    - name: test # Watch for new commits
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      writeBranch: env/stage # Write to env-specific branch
+    argoCDAppUpdates:
+    - appName: kargo-demo-stage
+      appNamespace: argocd
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-stage
+      appNamespace: argocd
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: prod
+  namespace: kargo-demo
+environment: prod
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: prod
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    upstreamEnvs:
+    - name: stage # Watch for new commits
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      writeBranch: env/prod # Write to env-specific branch
+    argoCDAppUpdates:
+    - appName: kargo-demo-prod
+      appNamespace: argocd
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-prod
+      appNamespace: argocd

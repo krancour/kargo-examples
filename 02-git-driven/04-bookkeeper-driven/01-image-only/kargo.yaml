@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: test
+  namespace: kargo-demo
+environment: test
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: test
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    repos:
+      images:
+      - repoURL: nginx
+        semverConstraint: ^1.24.0
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      readBranch: bookkeeper
+      writeBranch: env/test
+      bookkeeper: {}
+    argoCDAppUpdates:
+    - appName: kargo-demo-test
+      appNamespace: argocd
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-test
+      appNamespace: argocd
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: prod
+  namespace: kargo-demo
+environment: prod
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: stage
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    upstreamEnvs:
+    - name: test
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      readBranch: bookkeeper
+      writeBranch: env/stage
+      bookkeeper: {}
+    argoCDAppUpdates:
+    - appName: kargo-demo-stage
+      appNamespace: argocd
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-stage
+      appNamespace: argocd
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: stage
+  namespace: kargo-demo
+environment: stage
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: prod
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    upstreamEnvs:
+    - name: stage
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      readBranch: bookkeeper
+      writeBranch: env/prod
+      bookkeeper: {}
+    argoCDAppUpdates:
+    - appName: kargo-demo-prod
+      appNamespace: argocd
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-prod
+      appNamespace: argocd

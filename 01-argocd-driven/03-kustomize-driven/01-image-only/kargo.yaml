@@ -1,0 +1,107 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: test
+  namespace: kargo-demo
+environment: test
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: test
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    repos:
+      images:
+      - repoURL: nginx # Watch for new versions of this image
+        semverConstraint: ^1.24.0
+  promotionMechanisms:
+    argoCDAppUpdates:
+    - appName: kargo-demo-test
+      appNamespace: argocd
+      sourceUpdates:
+      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        kustomize:
+          images:
+          - nginx # Update Application to reference the new image version
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-test
+      appNamespace: argocd
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: stage
+  namespace: kargo-demo
+environment: stage
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: stage
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    upstreamEnvs:
+    - name: test # Watch for new versions of the image
+  promotionMechanisms:
+    argoCDAppUpdates:
+    - appName: kargo-demo-stage
+      appNamespace: argocd
+      sourceUpdates:
+      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        kustomize:
+          images:
+          - nginx # Update Application to reference the new image version
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-stage
+      appNamespace: argocd
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: prod
+  namespace: kargo-demo
+environment: prod
+authorizedPromoters:
+- subjectType: Group
+  name: system:masters
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Environment
+metadata:
+  name: prod
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    upstreamEnvs:
+    - name: stage # Watch for new versions of the image
+  promotionMechanisms:
+    argoCDAppUpdates:
+    - appName: kargo-demo-prod
+      appNamespace: argocd
+      sourceUpdates:
+      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        kustomize:
+          images:
+          - nginx # Update Application to reference the new image version
+  healthChecks:
+    argoCDAppChecks:
+    - appName: kargo-demo-prod
+      appNamespace: argocd
