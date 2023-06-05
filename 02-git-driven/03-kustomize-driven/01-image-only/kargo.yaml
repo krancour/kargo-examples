@@ -37,10 +37,6 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-test
       appNamespace: argocd
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-test
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -74,10 +70,6 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-stage
       appNamespace: argocd
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-stage
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -108,9 +100,5 @@ spec:
         - image: nginx
           path: env/prod # Run kustomize edit set image on this path
     argoCDAppUpdates:
-    - appName: kargo-demo-prod
-      appNamespace: argocd
-  healthChecks:
-    argoCDAppChecks:
     - appName: kargo-demo-prod
       appNamespace: argocd

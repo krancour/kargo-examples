@@ -32,10 +32,6 @@ spec:
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-test
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -64,10 +60,6 @@ spec:
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-stage
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -95,7 +87,3 @@ spec:
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true  # Update Application to reference the new commit
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-prod
-      appNamespace: argocd

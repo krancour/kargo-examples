@@ -38,10 +38,6 @@ spec:
           images:
           - nginx # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new commit
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-test
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -73,10 +69,6 @@ spec:
           images:
           - nginx # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new commit
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-stage
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -107,7 +99,3 @@ spec:
           images:
           - nginx # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new commit
-  healthChecks:
-    argoCDAppChecks:
-    - appName: kargo-demo-prod
-      appNamespace: argocd
