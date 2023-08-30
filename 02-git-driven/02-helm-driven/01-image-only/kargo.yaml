@@ -2,20 +2,19 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: kargo-demo
+  labels:
+    kargo.akuity.io/project: "true"
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
   name: test
   namespace: kargo-demo
-environment: test
-authorizedPromoters:
-- subjectType: Group
-  name: system:masters
+stage: test
 enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
-kind: Environment
+kind: Stage
 metadata:
   name: test
   namespace: kargo-demo
@@ -33,7 +32,7 @@ spec:
       helm:
         images:
         - image: nginx
-          valuesFilePath: charts/kargo-demo/env/test/values.yaml
+          valuesFilePath: charts/kargo-demo/stages/test/values.yaml
           key: image.name # Update this key to reference the new image version
           value: Image
     argoCDAppUpdates:
@@ -43,22 +42,19 @@ spec:
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
-  name: stage
+  name: uat
   namespace: kargo-demo
-environment: stage
-authorizedPromoters:
-- subjectType: Group
-  name: system:masters
+stage: uat
 enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
-kind: Environment
+kind: Stage
 metadata:
-  name: stage
+  name: uat
   namespace: kargo-demo
 spec:
   subscriptions:
-    upstreamEnvs:
+    upstreamStages:
     - name: test # Watch for new versions of the image
   promotionMechanisms:
     gitRepoUpdates:
@@ -68,32 +64,22 @@ spec:
       helm:
         images:
         - image: nginx
-          valuesFilePath: charts/kargo-demo/env/stage/values.yaml
+          valuesFilePath: charts/kargo-demo/stages/uat/values.yaml
           key: image.name # Update this key to reference the new image version
           value: Image
     argoCDAppUpdates:
-    - appName: kargo-demo-stage
+    - appName: kargo-demo-uat
       appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: prod
-  namespace: kargo-demo
-environment: prod
-authorizedPromoters:
-- subjectType: Group
-  name: system:masters
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Environment
+kind: Stage
 metadata:
   name: prod
   namespace: kargo-demo
 spec:
   subscriptions:
-    upstreamEnvs:
-    - name: stage # Watch for new versions of the image
+    upstreamStages:
+    - name: uat # Watch for new versions of the image
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
@@ -102,7 +88,7 @@ spec:
       helm:
         images:
         - image: nginx
-          valuesFilePath: charts/kargo-demo/env/prod/values.yaml
+          valuesFilePath: charts/kargo-demo/stages/prod/values.yaml
           key: image.name # Update this key to reference the new image version
           value: Image
     argoCDAppUpdates:

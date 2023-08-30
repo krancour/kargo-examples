@@ -6,7 +6,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kargo-demo-stage
+  name: kargo-demo-uat
 ---
 apiVersion: v1
 kind: Namespace
@@ -19,7 +19,7 @@ metadata:
   name: kargo-demo-test
   namespace: argocd
   annotations:
-    kargo.akuity.io/authorized-env: kargo-demo:test
+    kargo.akuity.io/authorized-stage: kargo-demo:test
 spec:
   project: default
   source:
@@ -37,10 +37,10 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kargo-demo-stage
+  name: kargo-demo-uat
   namespace: argocd
   annotations:
-    kargo.akuity.io/authorized-env: kargo-demo:stage
+    kargo.akuity.io/authorized-stage: kargo-demo:uat
 spec:
   project: default
   source:
@@ -53,7 +53,7 @@ spec:
         value: Placeholder # We will move new versions of the image into stage by updating this field
   destination:
     server: https://kubernetes.default.svc
-    namespace: kargo-demo-stage
+    namespace: kargo-demo-uat
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -61,7 +61,7 @@ metadata:
   name: kargo-demo-prod
   namespace: argocd
   annotations:
-    kargo.akuity.io/authorized-env: kargo-demo:prod
+    kargo.akuity.io/authorized-stage: kargo-demo:prod
 spec:
   project: default
   source:

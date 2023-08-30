@@ -6,7 +6,7 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: kargo-demo-stage
+  name: kargo-demo-uat
 ---
 apiVersion: v1
 kind: Namespace
@@ -35,16 +35,16 @@ metadata:
   name: kargo-demo-test
   namespace: argocd
   annotations:
-    kargo.akuity.io/authorized-env: kargo-demo:test
+    kargo.akuity.io/authorized-stage: kargo-demo:test
 spec:
   project: default
   source:
     repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: env/test # We will move new versions of the image AND new commits into test by updating this branch
+    targetRevision: stage/test # We will move new versions of the image AND new commits into test by updating this branch
     path: charts/kargo-demo
     helm:
       valueFiles:
-      - env/test/values.yaml
+      - stages/test/values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: kargo-demo-test
@@ -52,22 +52,22 @@ spec:
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kargo-demo-stage
+  name: kargo-demo-uat
   namespace: argocd
   annotations:
-    kargo.akuity.io/authorized-env: kargo-demo:stage
+    kargo.akuity.io/authorized-stage: kargo-demo:uat
 spec:
   project: default
   source:
     repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: env/stage # We will move new versions of the image AND new commits into stage by updating this branch
+    targetRevision: stage/uat # We will move new versions of the image AND new commits into stage by updating this branch
     path: charts/kargo-demo
     helm:
       valueFiles:
-      - env/stage/values.yaml
+      - stages/uat/values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: kargo-demo-stage
+    namespace: kargo-demo-uat
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -75,16 +75,16 @@ metadata:
   name: kargo-demo-prod
   namespace: argocd
   annotations:
-    kargo.akuity.io/authorized-env: kargo-demo:prod
+    kargo.akuity.io/authorized-stage: kargo-demo:prod
 spec:
   project: default
   source:
     repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: env/prod # We will move new versions of the image AND new commits into prod by updating this branch
+    targetRevision: stage/prod # We will move new versions of the image AND new commits into prod by updating this branch
     path: charts/kargo-demo
     helm:
       valueFiles:
-      - env/prod/values.yaml
+      - stages/prod/values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: kargo-demo-prod
