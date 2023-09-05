@@ -34,7 +34,7 @@ spec:
       kustomize:
         images:
         - image: nginx
-          path: stages/uat # Run kustomize edit set image on this path
+          path: stages/test # Run kustomize edit set image on this path
     argoCDAppUpdates:
     - appName: kargo-demo-test
       appNamespace: argocd
