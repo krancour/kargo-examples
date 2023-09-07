@@ -30,7 +30,6 @@ spec:
       writeBranch: stage/test # Write to stage-specific branch
     argoCDAppUpdates:
     - appName: kargo-demo-test
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -55,7 +54,6 @@ spec:
       writeBranch: stage/uat # Write to stage-specific branch
     argoCDAppUpdates:
     - appName: kargo-demo-uat
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -72,4 +70,3 @@ spec:
       writeBranch: stage/prod # Write to stage-specific branch
     argoCDAppUpdates:
     - appName: kargo-demo-prod
-      appNamespace: argocd

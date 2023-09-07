@@ -30,7 +30,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-test
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         kustomize:
@@ -58,7 +57,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-uat
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         kustomize:
@@ -78,7 +76,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-prod
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         kustomize:

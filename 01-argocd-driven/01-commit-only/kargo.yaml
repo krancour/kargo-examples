@@ -27,7 +27,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-test
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
@@ -52,7 +51,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-uat
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
@@ -69,7 +67,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-prod
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true  # Update Application to reference the new commit

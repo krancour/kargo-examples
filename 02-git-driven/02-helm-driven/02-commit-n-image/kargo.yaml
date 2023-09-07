@@ -39,7 +39,6 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-test
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -70,7 +69,6 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-uat
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -93,4 +91,3 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-prod
-      appNamespace: argocd

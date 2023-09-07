@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-test
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-uat-1
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-uat-2
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-uat-3
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-prod-1
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-prod-2
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-prod-3
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: kargo-demo
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/secret-type: repository
+  annotations:
+    kargo.akuity.io/authorized-projects: kargo-demo
+stringData:
+  type: git
+  url: https://github.com/krancour/kargo-demo-gitops-2.git
+  username: krancour
+  password: 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
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-test
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:test
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/test
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-test
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-uat-1
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:uat-1
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/uat-1
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-uat-1
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-uat-2
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:uat-2
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/uat-2
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-uat-2
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-uat-3
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:uat-3
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/uat-3
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-uat-3
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-prod-1
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:prod-1
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/prod-1
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-prod-1
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-prod-2
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:prod-2
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/prod-2
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-prod-2
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-prod-3
+  namespace: argocd
+  annotations:
+    kargo.akuity.io/authorized-stage: kargo-demo:prod-3
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+    targetRevision: stage/prod-3
+    path: kargo-demo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-prod-3

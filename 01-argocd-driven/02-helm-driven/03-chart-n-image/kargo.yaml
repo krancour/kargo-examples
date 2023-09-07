@@ -31,7 +31,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-test
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://charts.bitnami.com/bitnami
         chart: nginx
@@ -62,7 +61,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-uat
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://charts.bitnami.com/bitnami
         chart: nginx
@@ -85,7 +83,6 @@ spec:
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-prod
-      appNamespace: argocd
       sourceUpdates:
       - repoURL: https://charts.bitnami.com/bitnami
         chart: nginx

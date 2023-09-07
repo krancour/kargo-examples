@@ -35,7 +35,6 @@ spec:
           path: stages/test # Run kustomize edit set image on this path
     argoCDAppUpdates:
     - appName: kargo-demo-test
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -65,7 +64,6 @@ spec:
           path: stages/uat # Run kustomize edit set image on this path
     argoCDAppUpdates:
     - appName: kargo-demo-uat
-      appNamespace: argocd
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -87,4 +85,3 @@ spec:
           path: stages/prod # Run kustomize edit set image on this path
     argoCDAppUpdates:
     - appName: kargo-demo-prod
-      appNamespace: argocd
