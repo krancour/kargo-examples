@@ -5,6 +5,31 @@ metadata:
   labels:
     kargo.akuity.io/project: "true"
 ---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+  labels:
+    kargo.akuity.io/secret-type: repository
+stringData:
+  type: git
+  url: https://github.com/<username>/kargo-demo-gitops.git
+  username: <username>
+  password: <PAT>
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      branch: commit-only # Watch this branch for new commits
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
@@ -14,30 +39,27 @@ stage: test
 enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
-kind: Stage
-metadata:
-  name: test
-  namespace: kargo-demo
-spec:
-  subscriptions:
-    repos:
-      git:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-        branch: kustomize # Watch this branch for new commits
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/test # Write to stage-specific branch
-    argoCDAppUpdates:
-    - appName: kargo-demo-test
----
-apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
   name: uat
   namespace: kargo-demo
 stage: uat
 enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    warehouse: kargo-demo
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      writeBranch: stage/test # Write to stage-specific branch
+    argoCDAppUpdates:
+    - appName: kargo-demo-test
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage

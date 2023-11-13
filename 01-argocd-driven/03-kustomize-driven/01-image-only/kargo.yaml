@@ -6,32 +6,23 @@ metadata:
     kargo.akuity.io/project: "true"
 ---
 apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  subscriptions:
+  - image:
+      repoURL: nginx # Watch for new versions of this image
+      semverConstraint: ^1.24.0
+---
+apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
   name: test
   namespace: kargo-demo
 stage: test
 enableAutoPromotion: true
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: Stage
-metadata:
-  name: test
-  namespace: kargo-demo
-spec:
-  subscriptions:
-    repos:
-      images:
-      - repoURL: nginx # Watch for new versions of this image
-        semverConstraint: ^1.24.0
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-test
-      sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-        kustomize:
-          images:
-          - nginx # Update Application to reference the new image version
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
@@ -44,12 +35,29 @@ enableAutoPromotion: true
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
+  name: test
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    warehouse: kargo-demo
+  promotionMechanisms:
+    argoCDAppUpdates:
+    - appName: kargo-demo-test
+      sourceUpdates:
+      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        kustomize:
+          images:
+          - nginx # Update Application to reference the new image version
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
   name: uat
   namespace: kargo-demo
 spec:
   subscriptions:
     upstreamStages:
-    - name: test # Watch for new versions of the image
+    - name: test
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-uat
@@ -67,7 +75,7 @@ metadata:
 spec:
   subscriptions:
     upstreamStages:
-    - name: uat # Watch for new versions of the image
+    - name: uat
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-prod

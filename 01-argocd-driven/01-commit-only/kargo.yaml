@@ -6,11 +6,30 @@ metadata:
     kargo.akuity.io/project: "true"
 ---
 apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      branch: commit-only # Watch this branch for new commits
+---
+apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
   name: test
   namespace: kargo-demo
 stage: test
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: uat
+  namespace: kargo-demo
+stage: uat
 enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -20,24 +39,13 @@ metadata:
   namespace: kargo-demo
 spec:
   subscriptions:
-    repos:
-      git:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-        branch: commit-only # Watch this branch for new commits
+    warehouse: kargo-demo
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-test
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: uat
-  namespace: kargo-demo
-stage: uat
-enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage

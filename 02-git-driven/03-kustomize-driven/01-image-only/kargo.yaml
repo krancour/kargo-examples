@@ -5,6 +5,31 @@ metadata:
   labels:
     kargo.akuity.io/project: "true"
 ---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+  labels:
+    kargo.akuity.io/secret-type: repository
+stringData:
+  type: git
+  url: https://github.com/<username>/kargo-demo-gitops.git
+  username: <username>
+  password: <PAT>
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  subscriptions:
+  - image:
+      repoURL: nginx # Watch for new versions of this image
+      semverConstraint: ^1.24.0
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
@@ -14,35 +39,32 @@ stage: test
 enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
-kind: Stage
-metadata:
-  name: test
-  namespace: kargo-demo
-spec:
-  subscriptions:
-    repos:
-      images:
-      - repoURL: nginx # Watch for new versions of this image
-        semverConstraint: ^1.24.0
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      readBranch: kustomize
-      writeBranch: kustomize
-      kustomize:
-        images:
-        - image: nginx
-          path: stages/test # Run kustomize edit set image on this path
-    argoCDAppUpdates:
-    - appName: kargo-demo-test
----
-apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
   name: uat
   namespace: kargo-demo
 stage: uat
 enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo
+spec:
+  subscriptions:
+    warehouse: kargo-demo
+  promotionMechanisms:
+    gitRepoUpdates:
+    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      readBranch: kustomize
+      writeBranch: stage/test # Write to stage-specific branch
+      kustomize:
+        images:
+        - image: nginx
+          path: stages/test # Run kustomize edit set image on this path
+    argoCDAppUpdates:
+    - appName: kargo-demo-test
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -57,7 +79,7 @@ spec:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
       readBranch: kustomize
-      writeBranch: kustomize
+      writeBranch: stage/uat # Write to stage-specific branch
       kustomize:
         images:
         - image: nginx
@@ -78,7 +100,7 @@ spec:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
       readBranch: kustomize
-      writeBranch: kustomize
+      writeBranch: stage/prod # Write to stage-specific branch
       kustomize:
         images:
         - image: nginx

@@ -5,6 +5,34 @@ metadata:
   labels:
     kargo.akuity.io/project: "true"
 ---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+  labels:
+    kargo.akuity.io/secret-type: repository
+stringData:
+  type: git
+  url: https://github.com/<username>/kargo-demo-gitops.git
+  username: <username>
+  password: <PAT>
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      branch: helm # Watch this branch for new commits
+  - image:
+      repoURL: nginx # Watch for new versions of this image
+      semverConstraint: ^1.24.0
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy
 metadata:
@@ -14,23 +42,25 @@ stage: test
 enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionPolicy
+metadata:
+  name: uat
+  namespace: kargo-demo
+stage: uat
+enableAutoPromotion: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
   namespace: kargo-demo
 spec:
   subscriptions:
-    repos:
-      git:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-        branch: helm # Watch this branch for new commits
-      images:
-      - repoURL: nginx # Watch for new versions of this image
-        semverConstraint: ^1.24.0
+    warehouse: kargo-demo
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/test # Writing to stage-specific branch prevents the formation of a loop
+      writeBranch: stage/test # Write to stage-specific branch
       helm:
         images:
         - image: nginx
@@ -39,14 +69,6 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-test
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: uat
-  namespace: kargo-demo
-stage: uat
-enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -60,7 +82,7 @@ spec:
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/uat # Writing to stage-specific branch prevents the formation of a loop
+      writeBranch: stage/uat # Write to stage-specific branch
       helm:
         images:
         - image: nginx
@@ -82,7 +104,7 @@ spec:
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/prod # Writing to stage-specific branch prevents the formation of a loop
+      writeBranch: stage/prod # Write to stage-specific branch
       helm:
         images:
         - image: nginx
