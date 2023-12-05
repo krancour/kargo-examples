@@ -1,68 +1,34 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: kargo-demo-test
+  name: kargo-demo
   namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:test
 spec:
-  project: default
-  source:
-    repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: stage/test # We will move new versions of the image AND new commits into test by updating this branch
-    path: stages/test
-    kustomize:
-      images:
-      - nginx=nginx:1.24.0
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-test
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kargo-demo-uat
-  namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:uat
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: stage/uat # We will move new versions of the image AND new commits into stage by updating this branch
-    path: stages/uat
-    kustomize:
-      images:
-      - nginx=nginx:1.24.0
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-uat
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kargo-demo-prod
-  namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:prod
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: stage/prod # We will move new versions of the image AND new commits into prod by updating this branch
-    path: stages/prod
-    kustomize:
-      images:
-      - nginx=nginx:1.24.0
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-prod
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
+  generators:
+  - list:
+      elements:
+      - stage: test
+      - stage: uat
+      - stage: prod
+  template:
+    metadata:
+      name: kargo-demo-{{stage}}
+      annotations:
+        kargo.akuity.io/authorized-stage: kargo-demo:{{stage}}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        # Kargo will update this branch to move new commits from the commit-only
+        # branch into this stage
+        targetRevision: stage/{{stage}}
+        path: stages/{{stage}}
+        kustomize:
+          images:
+          - nginx=nginx:1.24.0
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: kargo-demo-{{stage}}
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

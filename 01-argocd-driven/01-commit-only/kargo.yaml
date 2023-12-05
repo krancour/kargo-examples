@@ -14,7 +14,8 @@ spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      branch: commit-only # Watch this branch for new commits
+      # Watch this branch instead of main. This is the "trunk" for this example.
+      branch: commit-only
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionPolicy

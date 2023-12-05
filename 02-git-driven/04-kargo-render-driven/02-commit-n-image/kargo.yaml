@@ -28,6 +28,7 @@ spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      # Watch this branch instead of main. This is the "trunk" for this example.
       branch: kargo-render
   - image:
       repoURL: nginx

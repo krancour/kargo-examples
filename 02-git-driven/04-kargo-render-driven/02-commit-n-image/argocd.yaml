@@ -1,59 +1,31 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: kargo-demo-test
+  name: kargo-demo
   namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:test
 spec:
-  project: default
-  source:
-    repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: stage/test
-    path: kargo-demo
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-test
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kargo-demo-uat
-  namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:uat
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: stage/uat
-    path: kargo-demo
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-uat
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kargo-demo-prod
-  namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:prod
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/<username>/kargo-demo-gitops.git
-    targetRevision: stage/prod
-    path: kargo-demo
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-prod
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
+  generators:
+  - list:
+      elements:
+      - stage: test
+      - stage: uat
+      - stage: prod
+  template:
+    metadata:
+      name: kargo-demo-{{stage}}
+      annotations:
+        kargo.akuity.io/authorized-stage: kargo-demo:{{stage}}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        # Kargo will update this branch to move new commits from the
+        # kargo-render branch and/or new images into this stage
+        targetRevision: stage/{{stage}}
+        path: kargo-demo
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: kargo-demo-{{stage}}
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

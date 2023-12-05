@@ -1,77 +1,39 @@
 apiVersion: argoproj.io/v1alpha1
-kind: Application
+kind: ApplicationSet
 metadata:
-  name: kargo-demo-test
+  name: kargo-demo
   namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:test
 spec:
-  project: default
-  source:
-    repoURL: https://charts.bitnami.com/bitnami
-    chart: nginx
-    targetRevision: 14.1.0
-    helm:
-      parameters:
-      - name: image.tag
-        value: placeholder # We will move new versions of the image into test by updating this field
-      - name: service.type
-        value: ClusterIP
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-test
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kargo-demo-uat
-  namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:uat
-spec:
-  project: default
-  source:
-    repoURL: https://charts.bitnami.com/bitnami
-    chart: nginx
-    targetRevision: 14.1.0
-    helm:
-      parameters:
-      - name: image.tag
-        value: placeholder # We will move new versions of the image into stage by updating this field
-      - name: service.type
-        value: ClusterIP
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-uat
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
----
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: kargo-demo-prod
-  namespace: argocd
-  annotations:
-    kargo.akuity.io/authorized-stage: kargo-demo:prod
-spec:
-  project: default
-  source:
-    repoURL: https://charts.bitnami.com/bitnami
-    chart: nginx
-    targetRevision: 14.1.0
-    helm:
-      parameters:
-      - name: image.tag
-        value: placeholder # We will move new versions of the image into prod by updating this field
-      - name: service.type
-        value: ClusterIP
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kargo-demo-test
-  syncPolicy:
-    syncOptions:
-    - CreateNamespace=true
+  generators:
+  - list:
+      elements:
+      - stage: test
+      - stage: uat
+      - stage: prod
+  template:
+    metadata:
+      name: kargo-demo-{{stage}}
+      annotations:
+        kargo.akuity.io/authorized-stage: kargo-demo:{{stage}}
+    spec:
+      project: default
+      source:
+        repoURL: https://charts.bitnami.com/bitnami
+        chart: nginx
+        targetRevision: 14.1.0
+        helm:
+          parameters:
+          # Kargo will update this value to move new images into each stage
+          - name: image.tag
+            value: placeholder
+          - name: service.type
+            value: ClusterIP
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: kargo-demo-{{stage}}
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
+  ignoreApplicationDifferences:
+  - jqPathExpressions:
+    - .spec.source.helm.parameters
