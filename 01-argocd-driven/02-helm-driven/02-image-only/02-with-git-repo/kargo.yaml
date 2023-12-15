@@ -50,6 +50,9 @@ spec:
           - image: nginx
             key: image.name
             value: Image # Update Application to reference the new image version
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -70,6 +73,9 @@ spec:
           - image: nginx
             key: image.name
             value: Image # Update Application to reference the new image version
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -90,3 +96,29 @@ spec:
           - image: nginx
             key: image.name
             value: Image # Update Application to reference the new image version
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  metrics:
+  - name: test
+    provider:
+      job:
+        metadata:
+        spec:
+          backoffLimit: 1
+          template:
+            spec:
+              containers:
+              - name: test
+                image: alpine:latest
+                command:
+                - sleep
+                - "20"
+              restartPolicy: Never

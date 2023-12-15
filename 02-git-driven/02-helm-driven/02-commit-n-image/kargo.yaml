@@ -70,6 +70,9 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-test
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -92,6 +95,9 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-uat
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -114,3 +120,29 @@ spec:
           value: Image
     argoCDAppUpdates:
     - appName: kargo-demo-prod
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo
+spec:
+  metrics:
+  - name: test
+    provider:
+      job:
+        metadata:
+        spec:
+          backoffLimit: 1
+          template:
+            spec:
+              containers:
+              - name: test
+                image: alpine:latest
+                command:
+                - sleep
+                - "20"
+              restartPolicy: Never
