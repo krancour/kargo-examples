@@ -1,9 +1,13 @@
-apiVersion: v1
-kind: Namespace
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
 metadata:
   name: kargo-demo
-  labels:
-    kargo.akuity.io/project: "true"
+spec:
+  promotionPolicies:
+  - stage: test
+    autoPromotionEnabled: true
+  - stage: uat
+    autoPromotionEnabled: true
 ---
 apiVersion: v1
 kind: Secret
@@ -30,22 +34,6 @@ spec:
       repoURL: https://github.com/<username>/kargo-demo-gitops.git
       # Watch this branch instead of main. This is the "trunk" for this example.
       branch: commit-only
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: test  
-  namespace: kargo-demo
-stage: test
-enableAutoPromotion: true
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: uat
-  namespace: kargo-demo
-stage: uat
-enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage

@@ -1,9 +1,13 @@
-apiVersion: v1
-kind: Namespace
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
 metadata:
   name: kargo-demo
-  labels:
-    kargo.akuity.io/project: "true"
+spec:
+  promotionPolicies:
+  - stage: test
+    autoPromotionEnabled: true
+  - stage: uat
+    autoPromotionEnabled: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
@@ -16,22 +20,6 @@ spec:
       registryURL: https://charts.bitnami.com/bitnami
       name: nginx # Watch for new versions of this chart
       semverConstraint: ^14.1.0
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: test
-  namespace: kargo-demo
-stage: test
-enableAutoPromotion: true
----
-apiVersion: kargo.akuity.io/v1alpha1
-kind: PromotionPolicy
-metadata:
-  name: uat
-  namespace: kargo-demo
-stage: uat
-enableAutoPromotion: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
