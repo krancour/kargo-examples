@@ -1,7 +1,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
-  name: kargo-demo
+  name: kargo-demo-09
 spec:
   promotionPolicies:
   - stage: test
@@ -14,7 +14,7 @@ kind: Secret
 type: Opaque
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-09
   labels:
     kargo.akuity.io/cred-type: git
 stringData:
@@ -26,28 +26,28 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-09
 spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<username>/kargo-demo-gitops.git
       # Watch this branch instead of main. This is the "trunk" for this example.
-      branch: commit-only
+      branch: kustomize
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
-  namespace: kargo-demo
+  namespace: kargo-demo-09
 spec:
   subscriptions:
     warehouse: kargo-demo
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/test # Write to stage-specific branch
+      writeBranch: 09/stage/test # Write to stage-specific branch
     argoCDAppUpdates:
-    - appName: kargo-demo-test
+    - appName: kargo-demo-09-test
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -56,7 +56,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: uat
-  namespace: kargo-demo
+  namespace: kargo-demo-09
 spec:
   subscriptions:
     upstreamStages:
@@ -64,9 +64,9 @@ spec:
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/uat # Write to stage-specific branch
+      writeBranch: 09/stage/uat # Write to stage-specific branch
     argoCDAppUpdates:
-    - appName: kargo-demo-uat
+    - appName: kargo-demo-09-uat
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -75,7 +75,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: prod
-  namespace: kargo-demo
+  namespace: kargo-demo-09
 spec:
   subscriptions:
     upstreamStages:
@@ -83,9 +83,9 @@ spec:
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
-      writeBranch: stage/prod # Write to stage-specific branch
+      writeBranch: 09/stage/prod # Write to stage-specific branch
     argoCDAppUpdates:
-    - appName: kargo-demo-prod
+    - appName: kargo-demo-09-prod
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -94,7 +94,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-09
 spec:
   metrics:
   - name: test

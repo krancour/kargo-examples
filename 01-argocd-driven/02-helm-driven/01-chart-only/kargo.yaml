@@ -1,7 +1,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
-  name: kargo-demo
+  name: kargo-demo-02
 spec:
   promotionPolicies:
   - stage: test
@@ -13,11 +13,11 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-02
 spec:
   subscriptions:
   - chart:
-      registryURL: https://charts.bitnami.com/bitnami
+      repoURL: https://charts.bitnami.com/bitnami
       name: nginx # Watch for new versions of this chart
       semverConstraint: ^14.1.0
 ---
@@ -25,13 +25,13 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
-  namespace: kargo-demo
+  namespace: kargo-demo-02
 spec:
   subscriptions:
     warehouse: kargo-demo
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-test
+    - appName: kargo-demo-02-test
       sourceUpdates:
       - repoURL: https://charts.bitnami.com/bitnami
         chart: nginx
@@ -44,14 +44,14 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: uat
-  namespace: kargo-demo
+  namespace: kargo-demo-02
 spec:
   subscriptions:
     upstreamStages:
     - name: test # Watch for new versions of the chart
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-uat
+    - appName: kargo-demo-02-uat
       sourceUpdates:
       - repoURL: https://charts.bitnami.com/bitnami
         chart: nginx
@@ -64,14 +64,14 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: prod
-  namespace: kargo-demo
+  namespace: kargo-demo-02
 spec:
   subscriptions:
     upstreamStages:
     - name: uat # Watch for new versions of the chart
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-prod
+    - appName: kargo-demo-02-prod
       sourceUpdates:
       - repoURL: https://charts.bitnami.com/bitnami
         chart: nginx
@@ -84,7 +84,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-02
 spec:
   metrics:
   - name: test

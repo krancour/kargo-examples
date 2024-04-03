@@ -1,7 +1,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
-  name: kargo-demo
+  name: kargo-demo-12
 spec:
   promotionPolicies:
   - stage: test
@@ -14,7 +14,7 @@ kind: Secret
 type: Opaque
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-12
   labels:
     kargo.akuity.io/cred-type: git
 stringData:
@@ -26,7 +26,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-12
 spec:
   subscriptions:
   - image:
@@ -37,7 +37,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
-  namespace: kargo-demo
+  namespace: kargo-demo-12
 spec:
   subscriptions:
     warehouse: kargo-demo
@@ -45,13 +45,13 @@ spec:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
       readBranch: kustomize
-      writeBranch: stage/test # Write to stage-specific branch
+      writeBranch: 12/stage/test # Write to stage-specific branch
       kustomize:
         images:
         - image: nginx
           path: stages/test # Run kustomize edit set image on this path
     argoCDAppUpdates:
-    - appName: kargo-demo-test
+    - appName: kargo-demo-12-test
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -60,7 +60,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: uat
-  namespace: kargo-demo
+  namespace: kargo-demo-12
 spec:
   subscriptions:
     upstreamStages:
@@ -69,13 +69,13 @@ spec:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
       readBranch: kustomize
-      writeBranch: stage/uat # Write to stage-specific branch
+      writeBranch: 12/stage/uat # Write to stage-specific branch
       kustomize:
         images:
         - image: nginx
           path: stages/uat # Run kustomize edit set image on this path
     argoCDAppUpdates:
-    - appName: kargo-demo-uat
+    - appName: kargo-demo-12-uat
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -84,7 +84,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: prod
-  namespace: kargo-demo
+  namespace: kargo-demo-12
 spec:
   subscriptions:
     upstreamStages:
@@ -93,13 +93,13 @@ spec:
     gitRepoUpdates:
     - repoURL: https://github.com/<username>/kargo-demo-gitops.git
       readBranch: kustomize
-      writeBranch: stage/prod # Write to stage-specific branch
+      writeBranch: 12/stage/prod # Write to stage-specific branch
       kustomize:
         images:
         - image: nginx
           path: stages/prod # Run kustomize edit set image on this path
     argoCDAppUpdates:
-    - appName: kargo-demo-prod
+    - appName: kargo-demo-12-prod
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -108,7 +108,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-12
 spec:
   metrics:
   - name: test

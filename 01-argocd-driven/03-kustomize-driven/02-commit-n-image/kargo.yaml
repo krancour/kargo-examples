@@ -1,7 +1,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
-  name: kargo-demo
+  name: kargo-demo-08
 spec:
   promotionPolicies:
   - stage: test
@@ -13,7 +13,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-08
 spec:
   subscriptions:
   - git:
@@ -28,13 +28,13 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
-  namespace: kargo-demo
+  namespace: kargo-demo-08
 spec:
   subscriptions:
     warehouse: kargo-demo
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-test
+    - appName: kargo-demo-08-test
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         kustomize:
@@ -49,14 +49,14 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: uat
-  namespace: kargo-demo
+  namespace: kargo-demo-08
 spec:
   subscriptions:
     upstreamStages:
     - name: test # Watch for new commits and images
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-uat
+    - appName: kargo-demo-08-uat
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         kustomize:
@@ -71,14 +71,14 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: prod
-  namespace: kargo-demo
+  namespace: kargo-demo-08
 spec:
   subscriptions:
     upstreamStages:
     - name: uat # Watch for new commits and images
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-prod
+    - appName: kargo-demo-08-prod
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         kustomize:
@@ -93,7 +93,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-08
 spec:
   metrics:
   - name: test

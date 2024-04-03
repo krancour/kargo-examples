@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: kargo-demo
+  name: kargo-demo-15
   namespace: argocd
 spec:
   generators:
@@ -12,20 +12,20 @@ spec:
       - stage: prod
   template:
     metadata:
-      name: kargo-demo-{{stage}}
+      name: kargo-demo-15-{{stage}}
       annotations:
-        kargo.akuity.io/authorized-stage: kargo-demo:{{stage}}
+        kargo.akuity.io/authorized-stage: kargo-demo-15:{{stage}}
     spec:
       project: default
       source:
         repoURL: https://github.com/<username>/kargo-demo-gitops.git
         # Kargo will update this branch to move new commits from the
         # kargo-render branch and/or new images into this stage
-        targetRevision: stage/{{stage}}
+        targetRevision: 15/stage/{{stage}}
         path: kargo-demo
       destination:
         server: https://kubernetes.default.svc
-        namespace: kargo-demo-{{stage}}
+        namespace: kargo-demo-15-{{stage}}
       syncPolicy:
         syncOptions:
         - CreateNamespace=true

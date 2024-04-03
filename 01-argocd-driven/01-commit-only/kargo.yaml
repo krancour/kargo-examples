@@ -1,7 +1,7 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
-  name: kargo-demo
+  name: kargo-demo-01
 spec:
   promotionPolicies:
   - stage: test
@@ -13,25 +13,25 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-01
 spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<username>/kargo-demo-gitops.git
       # Watch this branch instead of main. This is the "trunk" for this example.
-      branch: commit-only
+      branch: kustomize
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
-  namespace: kargo-demo
+  namespace: kargo-demo-01
 spec:
   subscriptions:
     warehouse: kargo-demo
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-test
+    - appName: kargo-demo-01-test
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
@@ -43,14 +43,14 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: uat
-  namespace: kargo-demo
+  namespace: kargo-demo-01
 spec:
   subscriptions:
     upstreamStages:
     - name: test # Watch for new commits
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-uat
+    - appName: kargo-demo-01-uat
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
@@ -62,14 +62,14 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: prod
-  namespace: kargo-demo
+  namespace: kargo-demo-01
 spec:
   subscriptions:
     upstreamStages:
     - name: uat # Watch for new commits
   promotionMechanisms:
     argoCDAppUpdates:
-    - appName: kargo-demo-prod
+    - appName: kargo-demo-01-prod
       sourceUpdates:
       - repoURL: https://github.com/<username>/kargo-demo-gitops.git
         updateTargetRevision: true  # Update Application to reference the new commit
@@ -81,7 +81,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: AnalysisTemplate
 metadata:
   name: kargo-demo
-  namespace: kargo-demo
+  namespace: kargo-demo-01
 spec:
   metrics:
   - name: test
