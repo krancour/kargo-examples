@@ -9,6 +9,19 @@ spec:
   - stage: uat
     autoPromotionEnabled: true
 ---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: image
+  namespace: kargo-demo-07
+  labels:
+    kargo.akuity.io/cred-type: image
+stringData:
+  repoURL: nginx
+  username: <dockerhub-username>
+  password: <dockerhub-pat>
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
@@ -32,7 +45,7 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-07-test
       sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         kustomize:
           images:
           - image: nginx # Update Application to reference the new image version
@@ -53,7 +66,7 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-07-uat
       sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         kustomize:
           images:
           - image: nginx # Update Application to reference the new image version
@@ -74,7 +87,7 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-07-prod
       sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         kustomize:
           images:
           - image: nginx # Update Application to reference the new image version

@@ -13,14 +13,27 @@ apiVersion: v1
 kind: Secret
 type: Opaque
 metadata:
-  name: kargo-demo
+  name: image
+  namespace: kargo-demo-10
+  labels:
+    kargo.akuity.io/cred-type: image
+stringData:
+  repoURL: nginx
+  username: <dockerhub-username>
+  password: <dockerhub-pat>
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: manifests
   namespace: kargo-demo-10
   labels:
     kargo.akuity.io/cred-type: git
 stringData:
-  repoURL: https://github.com/<username>/kargo-demo-gitops.git
-  username: <username>
-  password: <PAT>
+  repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+  username: <github-username>
+  password: <github-pat>
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
@@ -43,7 +56,7 @@ spec:
     warehouse: kargo-demo
   promotionMechanisms:
     gitRepoUpdates:
-    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       readBranch: helm
       writeBranch: 10/stage/test # Write to stage-specific branch
       helm:
@@ -69,7 +82,7 @@ spec:
     - name: test # Watch for new versions of the image
   promotionMechanisms:
     gitRepoUpdates:
-    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       readBranch: helm
       writeBranch: 10/stage/uat # Write to stage-specific branch
       helm:
@@ -95,7 +108,7 @@ spec:
     - name: uat # Watch for new versions of the image
   promotionMechanisms:
     gitRepoUpdates:
-    - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       readBranch: helm
       writeBranch: 10/stage/prod # Write to stage-specific branch
       helm:

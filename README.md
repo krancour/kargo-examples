@@ -12,14 +12,20 @@ You should fork that repo, and when doing so, _uncheck the `Copy the main branch
 only` option_. There is no need for you to clone that repository on your local
 machine. (You only need to clone _this_ repository.)
 
-> ⚠️&nbsp;&nbsp;_Anywhere_ you see `<username>` in these manifests, replace it
-> with your own GitHub handle. You may as well do a global find/replace with
-> your favorite text editor.
+> ⚠️&nbsp;&nbsp;_Anywhere_ in these manifests that you see:
 >
-> Also set up a personal access token capable of reading _and writing_ to your
-> fork. Anywhere you see `<PAT>` in a manifest, replace it with that token.
-> Again, you may as well do a global find/replace with your favorite text
-> editor.
+> * `<github-username>`, replace it with your own GitHub handle.
+>
+> * `<github-pat>`, replace it with a GitHub personal access token capable of
+>   reading _and writing_ to your fork.
+>
+> * `<dockerhub-username>`, replace it with your Docker Hub handle.
+>
+> * `<dockerhub-pat>`, replace it with a Docker Hub personal access token with
+>   read-only permissions.
+>
+> It is best to utilize your favorite text editor's search-and-replace feature
+> to carry out these substitutions.
 
 All examples are broken into two sets of manifests, with one named `argocd.yaml`
 and the other named `kargo.yaml`. The former should be applied first, followed

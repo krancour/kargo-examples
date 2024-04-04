@@ -18,7 +18,7 @@ spec:
     spec:
       project: default
       source:
-        repoURL: https://github.com/<username>/kargo-demo-gitops.git
+        repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         # Kargo will update this branch to move new images into this stage
         targetRevision: 14/stage/{{stage}}
         path: kargo-demo

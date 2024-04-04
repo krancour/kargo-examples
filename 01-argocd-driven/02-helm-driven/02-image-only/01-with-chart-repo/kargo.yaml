@@ -9,6 +9,19 @@ spec:
   - stage: uat
     autoPromotionEnabled: true
 ---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: image
+  namespace: kargo-demo-03
+  labels:
+    kargo.akuity.io/cred-type: image
+stringData:
+  repoURL: nginx
+  username: <dockerhub-username>
+  password: <dockerhub-pat>
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:

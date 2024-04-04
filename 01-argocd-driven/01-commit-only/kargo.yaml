@@ -17,7 +17,7 @@ metadata:
 spec:
   subscriptions:
   - git:
-      repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       # Watch this branch instead of main. This is the "trunk" for this example.
       branch: kustomize
 ---
@@ -33,7 +33,7 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-01-test
       sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
   verification:
     analysisTemplates:
@@ -52,7 +52,7 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-01-uat
       sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         updateTargetRevision: true # Update Application to reference the new commit
   verification:
     analysisTemplates:
@@ -71,7 +71,7 @@ spec:
     argoCDAppUpdates:
     - appName: kargo-demo-01-prod
       sourceUpdates:
-      - repoURL: https://github.com/<username>/kargo-demo-gitops.git
+      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         updateTargetRevision: true  # Update Application to reference the new commit
   verification:
     analysisTemplates:
