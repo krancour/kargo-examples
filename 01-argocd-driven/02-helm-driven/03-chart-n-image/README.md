@@ -1,8 +1,8 @@
 In this example, stage-specific Argo CD `Application` resources point directly
 at a specific version of the `nginx` chart in the Bitnami Helm chart repository
-_and_ mix in a specific version of the `nginx` container image from Docker Hub.
-Kargo watches the chart repository for new versions of the `nginx` chart _and_
-watches the image repository for new versions of the `nginx` image.
+_and_ mix in a specific version of the `public.ecr.aws/nginx/nginx` container
+image. Kargo watches the chart repository for new versions of the `nginx` chart
+_and_ watches for new versions of the `public.ecr.aws/nginx/nginx` image.
 
 New chart + image pairs are advanced from stage to stage by updating the
 `targetRevision` field _and_ Helm-specific parameters of each stage's

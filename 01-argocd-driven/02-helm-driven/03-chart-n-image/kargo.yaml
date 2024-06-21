@@ -9,19 +9,6 @@ spec:
   - stage: uat
     autoPromotionEnabled: true
 ---
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: image
-  namespace: kargo-demo-05
-  labels:
-    kargo.akuity.io/cred-type: image
-stringData:
-  repoURL: nginx
-  username: <dockerhub-username>
-  password: <dockerhub-pat>
----
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
@@ -34,7 +21,7 @@ spec:
       name: nginx # Watch for new versions of this chart
       semverConstraint: ^14.1.0
   - image:
-      repoURL: nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -53,7 +40,7 @@ spec:
         chart: nginx
         helm:
           images:
-          - image: nginx
+          - image: public.ecr.aws/nginx/nginx
             key: image.tag
             value: Tag # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new chart version
@@ -78,7 +65,7 @@ spec:
         chart: nginx
         helm:
           images:
-          - image: nginx
+          - image: public.ecr.aws/nginx/nginx
             key: image.tag
             value: Tag # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new chart version
@@ -103,7 +90,7 @@ spec:
         chart: nginx
         helm:
           images:
-          - image: nginx
+          - image: public.ecr.aws/nginx/nginx
             key: image.tag
             value: Tag # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new chart version

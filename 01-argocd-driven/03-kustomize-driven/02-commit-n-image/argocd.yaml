@@ -26,7 +26,7 @@ spec:
         kustomize:
           images:
           # Kargo will update this value to move new images into each stage
-          - nginx=nginx:placeholder
+          - public.ecr.aws/nginx/nginx=public.ecr.aws/nginx/nginx:placeholder
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-08-{{stage}}

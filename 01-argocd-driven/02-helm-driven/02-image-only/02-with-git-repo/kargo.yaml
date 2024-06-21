@@ -9,19 +9,6 @@ spec:
   - stage: uat
     autoPromotionEnabled: true
 ---
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: image
-  namespace: kargo-demo-04
-  labels:
-    kargo.akuity.io/cred-type: image
-stringData:
-  repoURL: nginx
-  username: <dockerhub-username>
-  password: <dockerhub-pat>
----
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
@@ -30,7 +17,7 @@ metadata:
 spec:
   subscriptions:
   - image:
-      repoURL: nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -48,7 +35,7 @@ spec:
       - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         helm:
           images:
-          - image: nginx
+          - image: public.ecr.aws/nginx/nginx
             key: image.name
             value: ImageAndTag # Update Application to reference the new image version
   verification:
@@ -71,7 +58,7 @@ spec:
       - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         helm:
           images:
-          - image: nginx
+          - image: public.ecr.aws/nginx/nginx
             key: image.name
             value: ImageAndTag # Update Application to reference the new image version
   verification:
@@ -94,7 +81,7 @@ spec:
       - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         helm:
           images:
-          - image: nginx
+          - image: public.ecr.aws/nginx/nginx
             key: image.name
             value: ImageAndTag # Update Application to reference the new image version
   verification:

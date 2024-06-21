@@ -9,19 +9,6 @@ spec:
   - stage: uat
     autoPromotionEnabled: true
 ---
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: image
-  namespace: kargo-demo-08
-  labels:
-    kargo.akuity.io/cred-type: image
-stringData:
-  repoURL: nginx
-  username: <dockerhub-username>
-  password: <dockerhub-pat>
----
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
@@ -34,7 +21,7 @@ spec:
       # Watch this branch instead of main. This is the "trunk" for this example.
       branch: kustomize
   - image:
-      repoURL: nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -52,7 +39,7 @@ spec:
       - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         kustomize:
           images:
-          - image: nginx # Update Application to reference the new image version
+          - image: public.ecr.aws/nginx/nginx # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new commit
   verification:
     analysisTemplates:
@@ -74,7 +61,7 @@ spec:
       - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         kustomize:
           images:
-          - image: nginx # Update Application to reference the new image version
+          - image: public.ecr.aws/nginx/nginx # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new commit
   verification:
     analysisTemplates:
@@ -96,7 +83,7 @@ spec:
       - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         kustomize:
           images:
-          - image: nginx # Update Application to reference the new image version
+          - image: public.ecr.aws/nginx/nginx # Update Application to reference the new image version
         updateTargetRevision: true # Update Application to reference the new commit
   verification:
     analysisTemplates:

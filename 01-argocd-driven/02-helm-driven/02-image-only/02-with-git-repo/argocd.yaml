@@ -25,7 +25,7 @@ spec:
           parameters:
           # Kargo will update this value to move new images into each stage
           - name: image.name
-            value: nginx:placeholder
+            value: public.ecr.aws/nginx/nginx:placeholder
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-04-{{stage}}
