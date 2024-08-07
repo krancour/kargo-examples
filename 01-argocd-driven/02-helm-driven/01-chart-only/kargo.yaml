@@ -27,8 +27,12 @@ metadata:
   name: test
   namespace: kargo-demo-02
 spec:
-  subscriptions:
-    warehouse: kargo-demo
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-02-test
@@ -46,9 +50,13 @@ metadata:
   name: uat
   namespace: kargo-demo-02
 spec:
-  subscriptions:
-    upstreamStages:
-    - name: test # Watch for new versions of the chart
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-02-uat
@@ -66,9 +74,13 @@ metadata:
   name: prod
   namespace: kargo-demo-02
 spec:
-  subscriptions:
-    upstreamStages:
-    - name: uat # Watch for new versions of the chart
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - uat
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-02-prod

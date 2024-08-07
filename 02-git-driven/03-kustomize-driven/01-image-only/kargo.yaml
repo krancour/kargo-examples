@@ -39,8 +39,12 @@ metadata:
   name: test
   namespace: kargo-demo-12
 spec:
-  subscriptions:
-    warehouse: kargo-demo
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
@@ -62,9 +66,13 @@ metadata:
   name: uat
   namespace: kargo-demo-12
 spec:
-  subscriptions:
-    upstreamStages:
-    - name: test # Watch for new versions of the image
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
@@ -86,9 +94,13 @@ metadata:
   name: prod
   namespace: kargo-demo-12
 spec:
-  subscriptions:
-    upstreamStages:
-    - name: uat # Watch for new versions of the image
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - uat
   promotionMechanisms:
     gitRepoUpdates:
     - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git

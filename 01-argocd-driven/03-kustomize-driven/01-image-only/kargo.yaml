@@ -26,8 +26,12 @@ metadata:
   name: test
   namespace: kargo-demo-07
 spec:
-  subscriptions:
-    warehouse: kargo-demo
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-07-test
@@ -46,9 +50,13 @@ metadata:
   name: uat
   namespace: kargo-demo-07
 spec:
-  subscriptions:
-    upstreamStages:
-    - name: test
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-07-uat
@@ -67,9 +75,13 @@ metadata:
   name: prod
   namespace: kargo-demo-07
 spec:
-  subscriptions:
-    upstreamStages:
-    - name: uat
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - uat
   promotionMechanisms:
     argoCDAppUpdates:
     - appName: kargo-demo-07-prod
