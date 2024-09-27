@@ -46,12 +46,41 @@ spec:
       name: kargo-demo
     sources:
       direct: true
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      writeBranch: 09/stage/test # Write to stage-specific branch
-    argoCDAppUpdates:
-    - appName: kargo-demo-09-test
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          checkout:
+          - fromFreight: true
+            path: ./src
+          - branch: 09/stage/test
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: copy
+        config:
+          inPath: ./src
+          outPath: ./out
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          message: updated manifests copied from main
+      - uses: git-push
+        config:
+          path: ./out
+          targetBranch: 09/stage/test
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-09-test
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              desiredCommitFromStep: commit
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -69,15 +98,41 @@ spec:
     sources:
       stages:
       - test
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      writeBranch: 09/stage/uat # Write to stage-specific branch
-    argoCDAppUpdates:
-    - appName: kargo-demo-09-uat
-  verification:
-    analysisTemplates:
-    - name: kargo-demo
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          checkout:
+          - fromFreight: true
+            path: ./src
+          - branch: 09/stage/uat
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: copy
+        config:
+          inPath: ./src
+          outPath: ./out
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          message: updated manifests copied from main
+      - uses: git-push
+        config:
+          path: ./out
+          targetBranch: 09/stage/uat
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-09-uat
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              desiredCommitFromStep: commit
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -92,12 +147,54 @@ spec:
     sources:
       stages:
       - uat
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      writeBranch: 09/stage/prod # Write to stage-specific branch
-    argoCDAppUpdates:
-    - appName: kargo-demo-09-prod
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          checkout:
+          - fromFreight: true
+            path: ./src
+          - branch: 09/stage/prod
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: copy
+        config:
+          inPath: ./src
+          outPath: ./out
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          message: updated manifests copied from main
+      - uses: git-push
+        as: push
+        config:
+          path: ./out
+          generateTargetBranch: true
+      - uses: git-open-pr
+        as: open-pr
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          createTargetBranch: true
+          sourceBranchFromStep: push
+          targetBranch: 09/stage/prod
+      - uses: git-wait-for-pr
+        as: wait-for-pr
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          prNumberFromStep: open-pr
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-09-prod
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              desiredCommitFromStep: wait-for-pr
   verification:
     analysisTemplates:
     - name: kargo-demo

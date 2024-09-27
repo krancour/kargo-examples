@@ -32,17 +32,21 @@ spec:
       name: kargo-demo
     sources:
       direct: true
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-03-test
-      sourceUpdates:
-      - repoURL: https://charts.bitnami.com/bitnami
-        chart: nginx
-        helm:
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            key: image.tag
-            value: Tag # Update Application to reference the new image version
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-03-test
+            sources:
+            - repoURL: https://charts.bitnami.com/bitnami
+              chart: nginx
+              helm:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+                  key: image.tag
+                  value: Tag
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -60,17 +64,21 @@ spec:
     sources:
       stages:
       - test
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-03-uat
-      sourceUpdates:
-      - repoURL: https://charts.bitnami.com/bitnami
-        chart: nginx
-        helm:
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            key: image.tag
-            value: Tag # Update Application to reference the new image version
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-03-uat
+            sources:
+            - repoURL: https://charts.bitnami.com/bitnami
+              chart: nginx
+              helm:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+                  key: image.tag
+                  value: Tag
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -88,17 +96,21 @@ spec:
     sources:
       stages:
       - uat
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-03-prod
-      sourceUpdates:
-      - repoURL: https://charts.bitnami.com/bitnami
-        chart: nginx
-        helm:
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            key: image.tag
-            value: Tag # Update Application to reference the new image version
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-03-prod
+            sources:
+            - repoURL: https://charts.bitnami.com/bitnami
+              chart: nginx
+              helm:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+                  key: image.tag
+                  value: Tag
   verification:
     analysisTemplates:
     - name: kargo-demo

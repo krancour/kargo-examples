@@ -19,7 +19,7 @@ spec:
   - git:
       repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       # Watch this branch instead of main. This is the "trunk" for this example.
-      branch: helm
+      branch: new-helm
   - image:
       repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
       semverConstraint: ^1.24.0
@@ -36,17 +36,21 @@ spec:
       name: kargo-demo
     sources:
       direct: true
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-06-test
-      sourceUpdates:
-      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        helm:
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            key: image.name
-            value: ImageAndTag # Update Application to reference the new image version
-        updateTargetRevision: true # Update Application to reference the new commit
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-06-test
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              helm:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+                  key: image.name
+                  value: ImageAndTag
+              updateTargetRevision: true
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -64,17 +68,21 @@ spec:
     sources:
       stages:
       - test
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-06-uat
-      sourceUpdates:
-      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        helm:
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            key: image.name
-            value: ImageAndTag # Update Application to reference the new image version
-        updateTargetRevision: true # Update Application to reference the new commit
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-06-uat
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              helm:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+                  key: image.name
+                  value: ImageAndTag
+              updateTargetRevision: true
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -92,17 +100,21 @@ spec:
     sources:
       stages:
       - uat
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-06-prod
-      sourceUpdates:
-      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        helm:
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            key: image.name
-            value: ImageAndTag # Update Application to reference the new image version
-        updateTargetRevision: true # Update Application to reference the new commit
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-06-prod
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              helm:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+                  key: image.name
+                  value: ImageAndTag
+              updateTargetRevision: true
   verification:
     analysisTemplates:
     - name: kargo-demo

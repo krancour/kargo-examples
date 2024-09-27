@@ -22,10 +22,7 @@ spec:
         # Kargo will update this branch to move new commits from the helm branch
         # and/or new images into this stage
         targetRevision: 11/stage/{{stage}}
-        path: charts/kargo-demo
-        helm:
-          valueFiles:
-          - stages/{{stage}}/values.yaml
+        path: ./kargo-demo/templates
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-11-{{stage}}

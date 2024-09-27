@@ -32,7 +32,7 @@ spec:
   - git:
       repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       # Watch this branch instead of main. This is the "trunk" for this example.
-      branch: helm
+      branch: new-helm
   - image:
       repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
       semverConstraint: ^1.24.0
@@ -49,18 +49,53 @@ spec:
       name: kargo-demo
     sources:
       direct: true
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      writeBranch: 11/stage/test # Write to stage-specific branch
-      helm:
-        images:
-        - image: public.ecr.aws/nginx/nginx
-          valuesFilePath: charts/kargo-demo/stages/test/values.yaml
-          key: image.name # Update this key to reference the new image version
-          value: ImageAndTag
-    argoCDAppUpdates:
-    - appName: kargo-demo-11-test
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          checkout:
+          - fromFreight: true
+            path: ./src
+          - branch: 11/stage/test
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: helm-update-image
+        as: update-image
+        config:
+          path: ./src/charts/kargo-demo/values.yaml
+          images:
+          - image: public.ecr.aws/nginx/nginx
+            key: image.name
+            value: ImageAndTag
+      - uses: helm-template
+        config:
+          path: ./src/charts/kargo-demo
+          releaseName: kargo-demo
+          valuesFiles:
+          - ./src/charts/kargo-demo/stages/test/values.yaml
+          outPath: ./out
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          messageFromSteps:
+          - update-image
+      - uses: git-push
+        config:
+          path: ./out
+          targetBranch: 11/stage/test
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-11-test
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              desiredCommitFromStep: commit
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -78,18 +113,53 @@ spec:
     sources:
       stages:
       - test
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      writeBranch: 11/stage/uat # Write to stage-specific branch
-      helm:
-        images:
-        - image: public.ecr.aws/nginx/nginx
-          valuesFilePath: charts/kargo-demo/stages/uat/values.yaml
-          key: image.name # Update this key to reference the new image version
-          value: ImageAndTag
-    argoCDAppUpdates:
-    - appName: kargo-demo-11-uat
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          checkout:
+          - fromFreight: true
+            path: ./src
+          - branch: 11/stage/uat
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: helm-update-image
+        as: update-image
+        config:
+          path: ./src/charts/kargo-demo/values.yaml
+          images:
+          - image: public.ecr.aws/nginx/nginx
+            key: image.name
+            value: ImageAndTag
+      - uses: helm-template
+        config:
+          path: ./src/charts/kargo-demo
+          releaseName: kargo-demo
+          valuesFiles:
+          - ./src/charts/kargo-demo/stages/uat/values.yaml
+          outPath: ./out
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          messageFromSteps:
+          - update-image
+      - uses: git-push
+        config:
+          path: ./out
+          targetBranch: 11/stage/uat
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-11-uat
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              desiredCommitFromStep: commit
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -107,18 +177,66 @@ spec:
     sources:
       stages:
       - uat
-  promotionMechanisms:
-    gitRepoUpdates:
-    - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      writeBranch: 11/stage/prod # Write to stage-specific branch
-      helm:
-        images:
-        - image: public.ecr.aws/nginx/nginx
-          valuesFilePath: charts/kargo-demo/stages/prod/values.yaml
-          key: image.name # Update this key to reference the new image version
-          value: ImageAndTag
-    argoCDAppUpdates:
-    - appName: kargo-demo-11-prod
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          checkout:
+          - fromFreight: true
+            path: ./src
+          - branch: 11/stage/prod
+            create: true
+            path: ./out
+      - uses: git-clear
+        config:
+          path: ./out
+      - uses: helm-update-image
+        as: update-image
+        config:
+          path: ./src/charts/kargo-demo/values.yaml
+          images:
+          - image: public.ecr.aws/nginx/nginx
+            key: image.name
+            value: ImageAndTag
+      - uses: helm-template
+        config:
+          path: ./src/charts/kargo-demo
+          releaseName: kargo-demo
+          valuesFiles:
+          - ./src/charts/kargo-demo/stages/prod/values.yaml
+          outPath: ./out
+      - uses: git-commit
+        as: commit
+        config:
+          path: ./out
+          messageFromSteps:
+          - update-image
+      - uses: git-push
+        as: push
+        config:
+          path: ./out
+          generateTargetBranch: true
+      - uses: git-open-pr
+        as: open-pr
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          createTargetBranch: true
+          sourceBranchFromStep: push
+          targetBranch: 11/stage/prod
+      - uses: git-wait-for-pr
+        as: wait-for-pr
+        config:
+          repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+          prNumberFromStep: open-pr
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-11-prod
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              desiredCommitFromStep: wait-for-pr
   verification:
     analysisTemplates:
     - name: kargo-demo

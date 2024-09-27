@@ -36,15 +36,19 @@ spec:
       name: kargo-demo
     sources:
       direct: true
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-08-test
-      sourceUpdates:
-      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        kustomize:
-          images:
-          - image: public.ecr.aws/nginx/nginx # Update Application to reference the new image version
-        updateTargetRevision: true # Update Application to reference the new commit
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-08-test
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              kustomize:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+              updateTargetRevision: true
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -62,15 +66,19 @@ spec:
     sources:
       stages:
       - test
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-08-uat
-      sourceUpdates:
-      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        kustomize:
-          images:
-          - image: public.ecr.aws/nginx/nginx # Update Application to reference the new image version
-        updateTargetRevision: true # Update Application to reference the new commit
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-08-uat
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              kustomize:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+              updateTargetRevision: true
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -88,15 +96,19 @@ spec:
     sources:
       stages:
       - uat
-  promotionMechanisms:
-    argoCDAppUpdates:
-    - appName: kargo-demo-08-prod
-      sourceUpdates:
-      - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        kustomize:
-          images:
-          - image: public.ecr.aws/nginx/nginx # Update Application to reference the new image version
-        updateTargetRevision: true # Update Application to reference the new commit
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-08-prod
+            sources:
+            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+              kustomize:
+                images:
+                - repoURL: public.ecr.aws/nginx/nginx
+              updateTargetRevision: true
   verification:
     analysisTemplates:
     - name: kargo-demo

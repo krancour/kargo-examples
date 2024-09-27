@@ -21,10 +21,7 @@ spec:
         repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
         # Kargo will update this branch to move new images into this stage
         targetRevision: 10/stage/{{stage}}
-        path: charts/kargo-demo
-        helm:
-          valueFiles:
-          - stages/{{stage}}/values.yaml
+        path: ./kargo-demo/templates
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-10-{{stage}}

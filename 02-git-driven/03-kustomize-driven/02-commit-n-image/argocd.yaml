@@ -22,7 +22,7 @@ spec:
         # Kargo will update this branch to move new commits from the kustomize
         # branch and/or new images into this stage
         targetRevision: 13/stage/{{stage}}
-        path: stages/{{stage}}
+        path: .
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-13-{{stage}}

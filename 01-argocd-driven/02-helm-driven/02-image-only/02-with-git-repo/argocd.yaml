@@ -19,7 +19,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        targetRevision: helm
+        targetRevision: new-helm
         path: charts/kargo-demo
         helm:
           parameters:
