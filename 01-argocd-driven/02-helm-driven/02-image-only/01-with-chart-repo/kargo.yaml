@@ -34,19 +34,21 @@ spec:
       direct: true
   promotionTemplate:
     spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-03-test
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
             - repoURL: https://charts.bitnami.com/bitnami
               chart: nginx
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.tag
-                  value: Tag
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -66,19 +68,21 @@ spec:
       - test
   promotionTemplate:
     spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-03-uat
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
             - repoURL: https://charts.bitnami.com/bitnami
               chart: nginx
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.tag
-                  value: Tag
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -98,19 +102,21 @@ spec:
       - uat
   promotionTemplate:
     spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-03-prod
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
             - repoURL: https://charts.bitnami.com/bitnami
               chart: nginx
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.tag
-                  value: Tag
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo

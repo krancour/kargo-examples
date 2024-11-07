@@ -34,18 +34,22 @@ spec:
       direct: true
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-04-test
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.name
-                  value: ImageAndTag
+                - key: image.name
+                  value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -65,18 +69,22 @@ spec:
       - test
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-04-uat
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.name
-                  value: ImageAndTag
+                - key: image.name
+                  value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -96,18 +104,22 @@ spec:
       - uat
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-04-prod
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.name
-                  value: ImageAndTag
+                - key: image.name
+                  value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo

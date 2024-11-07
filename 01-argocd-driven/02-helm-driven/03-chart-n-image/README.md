@@ -1,6 +1,6 @@
-In this example, stage-specific Argo CD `Application` resources point directly
-at a specific version of the `nginx` chart in the Bitnami Helm chart repository
-_and_ mix in a specific version of the `public.ecr.aws/nginx/nginx` container
+In this example, stage-specific Argo CD `Application` resources point at
+specific versions of the `nginx` chart in the Bitnami Helm chart repository
+_and_ mix in specific versions of the `public.ecr.aws/nginx/nginx` container
 image. Kargo watches the chart repository for new versions of the `nginx` chart
 _and_ watches for new versions of the `public.ecr.aws/nginx/nginx` image.
 

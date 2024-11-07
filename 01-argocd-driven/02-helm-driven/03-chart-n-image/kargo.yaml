@@ -38,20 +38,25 @@ spec:
       direct: true
   promotionTemplate:
     spec:
+      vars:
+      - name: chartRepo
+        value: https://charts.bitnami.com/bitnami
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-05-test
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://charts.bitnami.com/bitnami
+            - repoURL: ${{ vars.chartRepo }}
               chart: nginx
+              desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
+              updateTargetRevision: true
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.tag
-                  value: Tag
-              updateTargetRevision: true
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -71,20 +76,25 @@ spec:
       - test
   promotionTemplate:
     spec:
+      vars:
+      - name: chartRepo
+        value: https://charts.bitnami.com/bitnami
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-05-uat
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://charts.bitnami.com/bitnami
+            - repoURL: ${{ vars.chartRepo }}
               chart: nginx
+              desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
+              updateTargetRevision: true
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.tag
-                  value: Tag
-              updateTargetRevision: true
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -104,20 +114,25 @@ spec:
       - uat
   promotionTemplate:
     spec:
+      vars:
+      - name: chartRepo
+        value: https://charts.bitnami.com/bitnami
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-05-prod
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://charts.bitnami.com/bitnami
+            - repoURL: ${{ vars.chartRepo }}
               chart: nginx
+              desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
+              updateTargetRevision: true
               helm:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
-                  key: image.tag
-                  value: Tag
-              updateTargetRevision: true
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo

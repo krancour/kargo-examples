@@ -34,16 +34,22 @@ spec:
       direct: true
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-07-test
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
               kustomize:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
+                - repoURL: ${{ vars.imageRepo }}
+                  tag: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -63,16 +69,22 @@ spec:
       - test
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-07-uat
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
               kustomize:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
+                - repoURL: ${{ vars.imageRepo }}
+                  tag: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -92,16 +104,22 @@ spec:
       - uat
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-07-prod
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
               kustomize:
                 images:
-                - repoURL: public.ecr.aws/nginx/nginx
+                - repoURL: ${{ vars.imageRepo }}
+                  tag: ${{ imageFrom(vars.imageRepo).Tag }}
   verification:
     analysisTemplates:
     - name: kargo-demo

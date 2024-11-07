@@ -35,14 +35,18 @@ spec:
       direct: true
   promotionTemplate:
     spec:
+      vars:
+      - name: chartRepo
+        value: https://charts.bitnami.com/bitnami
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-02-test
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://charts.bitnami.com/bitnami
+            - repoURL: ${{ vars.chartRepo }}
               chart: nginx
+              desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
               updateTargetRevision: true
   verification:
     analysisTemplates:
@@ -63,14 +67,18 @@ spec:
       - test
   promotionTemplate:
     spec:
+      vars:
+      - name: chartRepo
+        value: https://charts.bitnami.com/bitnami
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-02-uat
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://charts.bitnami.com/bitnami
+            - repoURL: ${{ vars.chartRepo }}
               chart: nginx
+              desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
               updateTargetRevision: true
   verification:
     analysisTemplates:
@@ -91,14 +99,18 @@ spec:
       - uat
   promotionTemplate:
     spec:
+      vars:
+      - name: chartRepo
+        value: https://charts.bitnami.com/bitnami
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-02-prod
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://charts.bitnami.com/bitnami
+            - repoURL: ${{ vars.chartRepo }}
               chart: nginx
+              desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
               updateTargetRevision: true
   verification:
     analysisTemplates:

@@ -35,13 +35,17 @@ spec:
       direct: true
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-01-test
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
               updateTargetRevision: true
   verification:
     analysisTemplates:
@@ -62,13 +66,17 @@ spec:
       - test
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-01-uat
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
               updateTargetRevision: true
   verification:
     analysisTemplates:
@@ -89,13 +97,17 @@ spec:
       - uat
   promotionTemplate:
     spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
       steps:
       - uses: argocd-update
         config:
           apps:
-          - name: kargo-demo-01-prod
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
             sources:
-            - repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
               updateTargetRevision: true
   verification:
     analysisTemplates:
