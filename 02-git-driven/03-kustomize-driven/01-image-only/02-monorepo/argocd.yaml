@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: kargo-demo-14
+  namespace: argocd
+spec:
+  generators:
+  - matrix:
+      generators:
+      - list:
+          elements:
+          - app: "01"
+          - app: "02"
+          - app: "03"
+          - app: "04"
+          - app: "05"
+          - app: "06"
+          - app: "07"
+          - app: "08"
+          - app: "09"
+          - app: "10"
+          - app: "11"
+          - app: "12"
+          - app: "13"
+          - app: "14"
+          - app: "15"
+          - app: "16"
+          - app: "17"
+          - app: "18"
+          - app: "19"
+          - app: "20"
+      - list:
+          elements:
+          - stage: test
+          - stage: uat
+          - stage: prod
+  template:
+    metadata:
+      name: kargo-demo-14-{{app}}-{{stage}}
+      annotations:
+        kargo.akuity.io/authorized-stage: kargo-demo-14:app-{{app}}-{{stage}}
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+        targetRevision: monorepo
+        path: apps/app-{{app}}/stages/{{stage}}
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: kargo-demo-14-{{app}}-{{stage}}
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
