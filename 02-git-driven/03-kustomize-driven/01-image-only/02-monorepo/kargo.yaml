@@ -150,6 +150,47 @@ spec:
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: promo-process
+  namespace: kargo-demo-14
+spec:
+  vars:
+  - name: gitRepo
+    value: https://github.com/<github-username>/kargo-demo-gitops.git
+  - name: imageRepo
+    value: public.ecr.aws/nginx/nginx
+  - name: appNum
+  - name: stage
+  steps:
+  - uses: git-clone
+    config:
+      repoURL: ${{ vars.gitRepo }}
+      checkout:
+      - branch: monorepo
+        path: ./src
+  - uses: kustomize-set-image
+    as: update-image
+    config:
+      path: ./src/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
+      images:
+      - image: public.ecr.aws/nginx/nginx
+        tag: ${{ imageFrom(vars.imageRepo).Tag }}
+  - uses: git-commit
+    as: commit
+    config:
+      path: ./src
+      messageFromSteps:
+      - update-image
+  - uses: git-push
+    config:
+      path: ./src
+  - uses: argocd-update
+    config:
+      apps:
+      - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+---
+apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: app-01-test
@@ -164,43 +205,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "01"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -218,43 +229,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "01"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -272,43 +253,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "01"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -325,43 +276,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "02"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -379,43 +300,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "02"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -433,43 +324,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "02"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -486,43 +347,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "03"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -540,43 +371,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "03"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -594,43 +395,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "03"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -647,43 +418,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops-2.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "04"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -701,43 +442,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "04"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -755,43 +466,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "04"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -808,43 +489,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "05"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -862,43 +513,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "05"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -916,43 +537,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "05"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -969,43 +560,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "06"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1023,43 +584,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "06"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1077,43 +608,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "06"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1130,43 +631,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "07"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1184,43 +655,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "07"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1238,43 +679,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "07"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1291,43 +702,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "08"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1345,43 +726,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "08"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1399,43 +750,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "08"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1452,43 +773,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops-2.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "09"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1506,43 +797,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "09"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1560,43 +821,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "09"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1613,43 +844,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "10"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1667,43 +868,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "10"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1721,43 +892,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "10"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1774,43 +915,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "11"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1828,43 +939,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "11"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1882,43 +963,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "11"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1935,43 +986,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "12"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -1989,43 +1010,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "12"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2043,43 +1034,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "12"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2096,43 +1057,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "13"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2150,43 +1081,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "13"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2204,43 +1105,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops-2.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "13"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2257,43 +1128,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "14"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2311,43 +1152,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "14"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2365,43 +1176,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "14"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2418,43 +1199,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "15"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2472,43 +1223,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "15"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2526,43 +1247,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "15"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2579,43 +1270,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "16"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2633,43 +1294,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "16"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2687,43 +1318,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "16"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2740,43 +1341,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "17"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2794,43 +1365,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "17"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2848,43 +1389,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "17"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2901,43 +1412,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "18"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -2955,43 +1436,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "18"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3009,43 +1460,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "18"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3062,43 +1483,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "19"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3116,43 +1507,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "19"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3170,43 +1531,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "19"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3223,43 +1554,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "20"
       - name: stage
         value: test
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3277,43 +1578,13 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "20"
       - name: stage
         value: uat
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -3331,40 +1602,10 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: srcPath
-        value: ./src
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       - name: appNum
         value: "20"
       - name: stage
         value: prod
       steps:
-      - uses: git-clone
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          checkout:
-          - branch: monorepo
-            path: ${{ vars.srcPath }}
-      - uses: kustomize-set-image
-        as: update-image
-        config:
-          path: ${{ vars.srcPath }}/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
-          images:
-          - image: public.ecr.aws/nginx/nginx
-            tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      - uses: git-commit
-        as: commit
-        config:
-          path: ${{ vars.srcPath }}
-          messageFromSteps:
-          - update-image
-      - uses: git-push
-        config:
-          path: ${{ vars.srcPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: kargo-demo-14-${{ vars.appNum }}-${{ vars.stage }}
+      - task:
+          name: promo-process

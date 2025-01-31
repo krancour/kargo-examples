@@ -8,6 +8,8 @@ spec:
     autoPromotionEnabled: true
   - stage: uat
     autoPromotionEnabled: true
+  - stage: prod
+    autoPromotionEnabled: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
@@ -25,6 +27,31 @@ spec:
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: promo-process
+  namespace: kargo-demo-06
+spec:
+  vars:
+  - name: gitRepo
+    value: https://github.com/<github-username>/kargo-demo-gitops.git
+  - name: imageRepo
+    value: public.ecr.aws/nginx/nginx
+  steps:
+  - uses: argocd-update
+    config:
+      apps:
+      - name: ${{ ctx.project }}-${{ ctx.stage }}
+        sources:
+        - repoURL: ${{ vars.gitRepo }}
+          desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
+          updateTargetRevision: true
+          helm:
+            images:
+            - key: image.name
+              value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+---
+apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
@@ -38,24 +65,9 @@ spec:
       direct: true
   promotionTemplate:
     spec:
-      vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       steps:
-      - uses: argocd-update
-        config:
-          apps:
-          - name: ${{ ctx.project }}-${{ ctx.stage }}
-            sources:
-            - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
-              updateTargetRevision: true
-              helm:
-                images:
-                - key: image.name
-                  value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+      - task:
+          name: promo-process
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -75,24 +87,9 @@ spec:
       - test
   promotionTemplate:
     spec:
-      vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       steps:
-      - uses: argocd-update
-        config:
-          apps:
-          - name: ${{ ctx.project }}-${{ ctx.stage }}
-            sources:
-            - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
-              updateTargetRevision: true
-              helm:
-                images:
-                - key: image.name
-                  value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+      - task:
+          name: promo-process
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -112,24 +109,9 @@ spec:
       - uat
   promotionTemplate:
     spec:
-      vars:
-      - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
-      - name: imageRepo
-        value: public.ecr.aws/nginx/nginx
       steps:
-      - uses: argocd-update
-        config:
-          apps:
-          - name: ${{ ctx.project }}-${{ ctx.stage }}
-            sources:
-            - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: ${{ commitFrom(vars.gitRepo).ID }}
-              updateTargetRevision: true
-              helm:
-                images:
-                - key: image.name
-                  value: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+      - task:
+          name: promo-process
   verification:
     analysisTemplates:
     - name: kargo-demo

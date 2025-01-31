@@ -28,6 +28,44 @@ stringData:
   token: foo
 ---
 apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: promo-process
+  namespace: kargo-demo-15
+spec:
+  vars:
+  - name: repoURL
+    value: public.ecr.aws/nginx/nginx
+  - name: url
+    # Set this to the IP of your host machine and just run `nc -l 8080`
+    value: http://<host IP>:8080
+  - name: slackChannel
+    value: C123456 # Totally fake
+  steps:
+  - uses: http
+    config:
+      method: POST
+      url: ${{ vars.url }}
+      headers:
+      - name: Content-Type
+        value: application/json
+      - name: Authorization
+        value: Bearer ${{ secrets.slack.token }}
+      body: |
+        ${{ quote({
+          "channel": vars.slackChannel,
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "Updated " + ctx.stage + " to use image " + vars.repoURL + ":" + imageFrom(vars.repoURL).Tag
+              }
+            }
+          ]
+        }) }}
+---
+apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
@@ -41,33 +79,78 @@ spec:
       direct: true
   promotionTemplate:
     spec:
-      vars:
-      - name: repoURL
-        value: public.ecr.aws/nginx/nginx
-      - name: url
-        value: http://192.168.2.117:8080
-      - name: slackChannel
-        value: C123456
       steps:
-      - uses: http
-        config:
-          method: POST
-          url: ${{ vars.url }}
-          headers:
-          - name: Content-Type
-            value: application/json
-          - name: Authorization
-            value: Bearer ${{ secrets.slack.token }}
-          body: |
-            ${{ quote({
-              "channel": vars.slackChannel,
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "Updated " + ctx.stage + " to use image " + vars.repoURL + ":" + imageFrom(vars.repoURL).Tag
-                  }
-                }
-              ]
-            }) }}
+      - task:
+          name: promo-process
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: uat
+  namespace: kargo-demo-15
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
+      requiredSoakTime: 10m
+  promotionTemplate:
+    spec:
+      steps:
+      - task:
+          name: promo-process
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: kargo-demo-15
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - uat
+      requiredSoakTime: 10m
+  promotionTemplate:
+    spec:
+      steps:
+      - task:
+          name: promo-process
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-15
+spec:
+  metrics:
+  - name: test
+    provider:
+      job:
+        metadata:
+        spec:
+          backoffLimit: 1
+          template:
+            spec:
+              containers:
+              - name: test
+                image: alpine:latest
+                command:
+                - sleep
+                - "20"
+              restartPolicy: Never
