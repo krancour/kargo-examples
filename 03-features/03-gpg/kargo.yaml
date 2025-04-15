@@ -1,0 +1,367 @@
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-17
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-17
+  namespace: kargo-demo-17
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: uat
+    autoPromotionEnabled: true
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: manifests
+  namespace: kargo-demo-17
+  labels:
+    kargo.akuity.io/cred-type: git
+stringData:
+  repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+  username: <github-username>
+  password: <github-pat>
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: gpg-signing-key
+  namespace: kargo-demo-17
+stringData:
+  # This key is not sensitive. It's not used for anything else and it's trusted
+  # by no one.
+  signingKey: |
+    -----BEGIN PGP PRIVATE KEY BLOCK-----
+
+    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
+    =AV1H
+    -----END PGP PRIVATE KEY BLOCK-----
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-17
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      semverConstraint: ^1.24.0
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: PromotionTask
+metadata:
+  name: base-promo-process
+  namespace: kargo-demo-17
+spec:
+  vars:
+  - name: gitRepo
+  - name: targetBranch
+  - name: outPath
+  - name: imageRepo
+    value: public.ecr.aws/nginx/nginx
+  steps:
+  # Promotion should fail because http fails. All other steps should be skipped.
+  - uses: http
+    config:
+      method: GET
+      url: https://www.catfacts.net/api/bogus
+  - uses: git-clone
+    config:
+      repoURL: ${{ vars.gitRepo }}
+      checkout:
+      - branch: kustomize
+        path: ./src
+      - branch: ${{ vars.targetBranch }}
+        create: true
+        path: ${{ vars.outPath }}
+  - uses: git-clear
+    config:
+      path: ${{ vars.outPath }}
+  - uses: kustomize-set-image
+    as: update-image
+    config:
+      path: ./src/base
+      images:
+      - image: ${{ vars.imageRepo }}
+        tag: ${{ imageFrom(vars.imageRepo).Tag }}
+  - uses: kustomize-build
+    config:
+      path: ./src/stages/${{ ctx.stage }}
+      outPath: ${{ vars.outPath }}
+  - uses: git-commit
+    as: commit
+    config:
+      path: ${{ vars.outPath }}
+      author:
+        name: Tony Stark
+        email: tony@starkindustries.com
+        signingKey: ${{ secret('gpg-signing-key').signingKey }}
+      message: ${{ task.outputs['update-image'].commitMessage }}
+  - uses: compose-output
+    config:
+      commit: ${{ task.outputs.commit.commit }}
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-17
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: ${{ secret('manifests').repoURL }}
+      - name: targetBranch
+        value: 17/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - task:
+          name: base-promo-process
+        as: base
+      - uses: git-push
+        config:
+          path: ${{ vars.outPath }}
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ outputs.base.commit }}
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: uat
+  namespace: kargo-demo-17
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: ${{ secret('manifests').repoURL }}
+      - name: targetBranch
+        value: 17/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - task:
+          name: base-promo-process
+        as: base
+      - uses: git-push
+        config:
+          path: ${{ vars.outPath }}
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ outputs.base.commit }}
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: kargo-demo-17
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - uat
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: ${{ secret('manifests').repoURL }}
+      - name: targetBranch
+        value: 17/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - task:
+          name: base-promo-process
+      - uses: git-push
+        as: push
+        config:
+          path: ${{ vars.outPath }}
+          generateTargetBranch: true
+      - uses: git-open-pr
+        as: open-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          createTargetBranch: true
+          sourceBranch: ${{ outputs.push.branch }}
+          targetBranch: ${{ vars.targetBranch }}
+      - uses: git-wait-for-pr
+        as: wait-for-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          prNumber: ${{ outputs['open-pr'].prNumber }}
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ outputs['wait-for-pr'].commit }}
+  verification:
+    analysisTemplates:
+    - name: kargo-demo
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-17
+spec:
+  metrics:
+  - name: test
+    provider:
+      job:
+        metadata:
+        spec:
+          backoffLimit: 1
+          template:
+            spec:
+              containers:
+              - name: test
+                image: alpine:latest
+                command:
+                - sleep
+                - "20"
+              restartPolicy: Never

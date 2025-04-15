@@ -23,7 +23,6 @@ spec:
         path: stages/{{stage}}
         kustomize:
           images:
-          # Kargo will update this value to move new images into each stage
           - public.ecr.aws/nginx/nginx=public.ecr.aws/nginx/nginx:placeholder
       destination:
         server: https://kubernetes.default.svc

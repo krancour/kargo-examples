@@ -23,7 +23,6 @@ spec:
         targetRevision: 14.1.0
         helm:
           parameters:
-          # Kargo will update this value to move new images into each stage
           - name: image.tag
             value: placeholder
           - name: service.type

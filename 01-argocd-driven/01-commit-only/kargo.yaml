@@ -30,7 +30,6 @@ spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      # Watch this branch instead of main. This is the "trunk" for this example.
       branch: kustomize
 ---
 apiVersion: kargo.akuity.io/v1alpha1

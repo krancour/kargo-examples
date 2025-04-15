@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: kargo-demo-06
+  name: kargo-demo-17
   namespace: argocd
 spec:
   generators:
@@ -12,26 +12,18 @@ spec:
       - stage: prod
   template:
     metadata:
-      name: kargo-demo-06-{{stage}}
+      name: kargo-demo-17-{{stage}}
       annotations:
-        kargo.akuity.io/authorized-stage: kargo-demo-06:{{stage}}
+        kargo.akuity.io/authorized-stage: kargo-demo-17:{{stage}}
     spec:
       project: default
       source:
         repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        targetRevision: placeholder
-        path: charts/kargo-demo
-        helm:
-          parameters:
-          - name: image.name
-            value: public.ecr.aws/nginx/nginx:placeholder
+        targetRevision: 17/stage/{{stage}}
+        path: .
       destination:
         server: https://kubernetes.default.svc
-        namespace: kargo-demo-06-{{stage}}
+        namespace: kargo-demo-17-{{stage}}
       syncPolicy:
         syncOptions:
         - CreateNamespace=true
-  ignoreApplicationDifferences:
-  - jqPathExpressions:
-    - .spec.source.targetRevision
-    - .spec.source.helm.parameters

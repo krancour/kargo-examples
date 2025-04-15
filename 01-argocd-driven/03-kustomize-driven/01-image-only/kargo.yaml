@@ -24,7 +24,7 @@ metadata:
 spec:
   subscriptions:
   - image:
-      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1

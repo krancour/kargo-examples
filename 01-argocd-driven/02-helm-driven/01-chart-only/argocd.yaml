@@ -20,7 +20,6 @@ spec:
       source:
         repoURL: https://charts.bitnami.com/bitnami
         chart: nginx
-        # Kargo will update targetRevision to move new charts into each stage
         targetRevision: placeholder
         helm:
           parameters:

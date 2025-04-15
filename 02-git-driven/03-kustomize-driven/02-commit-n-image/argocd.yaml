@@ -19,8 +19,6 @@ spec:
       project: default
       source:
         repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        # Kargo will update this branch to move new commits from the kustomize
-        # branch and/or new images into this stage
         targetRevision: 13/stage/{{stage}}
         path: .
       destination:

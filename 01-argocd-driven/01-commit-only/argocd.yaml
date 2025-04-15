@@ -19,8 +19,6 @@ spec:
       project: default
       source:
         repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-        # Kargo will update targetRevision to move new commits from main into
-        # each stage
         targetRevision: placeholder
         path: stages/{{stage}}
         kustomize:

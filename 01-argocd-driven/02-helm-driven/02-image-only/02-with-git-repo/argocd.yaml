@@ -23,7 +23,6 @@ spec:
         path: charts/kargo-demo
         helm:
           parameters:
-          # Kargo will update this value to move new images into each stage
           - name: image.name
             value: public.ecr.aws/nginx/nginx:placeholder
       destination:

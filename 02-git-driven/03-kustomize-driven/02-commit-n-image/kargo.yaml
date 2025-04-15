@@ -19,6 +19,14 @@ spec:
     autoPromotionEnabled: true
 ---
 apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+  namespace: kargo-demo-13
+data:
+  imageRepoURL: public.ecr.aws/nginx/nginx
+---
+apiVersion: v1
 kind: Secret
 type: Opaque
 metadata:
@@ -40,10 +48,9 @@ spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      # Watch this branch instead of main. This is the "trunk" for this example.
       branch: kustomize
   - image:
-      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -76,7 +83,7 @@ spec:
     config:
       path: ./src/base
       images:
-      - image: public.ecr.aws/nginx/nginx
+      - image: ${{ vars.imageRepo }}
         tag: ${{ imageFrom(vars.imageRepo).Tag }}
   - uses: kustomize-build
     config:
@@ -86,8 +93,7 @@ spec:
     as: commit
     config:
       path: ${{ vars.outPath }}
-      messageFromSteps:
-      - update-image
+      message: ${{ task.outputs['update-image'].commitMessage }}
   - uses: compose-output
     config:
       commit: ${{ task.outputs.commit.commit }}
@@ -108,7 +114,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
+        value: ${{ secret('manifests').repoURL }}
       - name: targetBranch
         value: 13/stage/${{ ctx.stage }}
       - name: outPath
@@ -149,7 +155,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
+        value: ${{ secret('manifests').repoURL }}
       - name: targetBranch
         value: 13/stage/${{ ctx.stage }}
       - name: outPath
@@ -190,7 +196,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
+        value: ${{ secret('manifests').repoURL }}
       - name: targetBranch
         value: 13/stage/${{ ctx.stage }}
       - name: outPath
