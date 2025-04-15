@@ -36,7 +36,7 @@ metadata:
 spec:
   subscriptions:
   - image:
-      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -47,7 +47,7 @@ metadata:
 spec:
   vars:
   - name: gitRepo
-    value: https://github.com/<github-username>/kargo-demo-gitops.git
+    value: ${{ secret('manifests').repoURL }}
   - name: imageRepo
     value: public.ecr.aws/nginx/nginx
   - name: appNum
@@ -64,14 +64,13 @@ spec:
     config:
       path: ./src/apps/app-${{ vars.appNum }}/stages/${{ vars.stage }}
       images:
-      - image: public.ecr.aws/nginx/nginx
+      - image: ${{ vars.imageRepo }}
         tag: ${{ imageFrom(vars.imageRepo).Tag }}
   - uses: git-commit
     as: commit
     config:
       path: ./src
-      messageFromSteps:
-      - update-image
+      message: ${{ task.outputs['update-image'].commitMessage }}
   - uses: git-push
     config:
       path: ./src

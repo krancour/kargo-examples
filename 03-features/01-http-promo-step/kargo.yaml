@@ -58,7 +58,7 @@ spec:
       - name: Content-Type
         value: application/json
       - name: Authorization
-        value: Bearer ${{ secrets.slack.token }}
+        value: Bearer ${{ secret('slack').token }}
       body: |
         ${{ quote({
           "channel": vars.slackChannel,

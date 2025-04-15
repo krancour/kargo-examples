@@ -37,10 +37,9 @@ spec:
   subscriptions:
   - git:
       repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-      # Watch this branch instead of main. This is the "trunk" for this example.
       branch: new-helm
   - image:
-      repoURL: public.ecr.aws/nginx/nginx # Watch for new versions of this image
+      repoURL: public.ecr.aws/nginx/nginx
       semverConstraint: ^1.24.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -86,8 +85,7 @@ spec:
     as: commit
     config:
       path: ${{ vars.outPath }}
-      messageFromSteps:
-      - update-image
+      message: ${{ task.outputs['update-image'].commitMessage }}
   - uses: compose-output
     config:
       commit: ${{ task.outputs.commit.commit }}
@@ -108,7 +106,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
+        value: ${{ secret('manifests').repoURL }}
       - name: targetBranch
         value: 11/stage/${{ ctx.stage }}
       - name: outPath
@@ -149,7 +147,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
+        value: ${{ secret('manifests').repoURL }}
       - name: targetBranch
         value: 11/stage/${{ ctx.stage }}
       - name: outPath
@@ -190,7 +188,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: https://github.com/<github-username>/kargo-demo-gitops.git
+        value: ${{ secret('manifests').repoURL }}
       - name: targetBranch
         value: 11/stage/${{ ctx.stage }}
       - name: outPath

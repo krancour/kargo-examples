@@ -30,7 +30,7 @@ spec:
   subscriptions:
   - chart:
       repoURL: https://charts.bitnami.com/bitnami
-      name: nginx # Watch for new versions of this chart
+      name: nginx
       semverConstraint: ^14.1.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -42,6 +42,8 @@ spec:
   vars:
   - name: chartRepo
     value: https://charts.bitnami.com/bitnami
+  - name: chartName
+    value: nginx
   steps:
   - uses: argocd-update
     config:
@@ -49,8 +51,8 @@ spec:
       - name: ${{ ctx.project }}-${{ ctx.stage }}
         sources:
         - repoURL: ${{ vars.chartRepo }}
-          chart: nginx
-          desiredRevision: ${{ chartFrom(vars.chartRepo, "nginx").Version }}
+          chart: ${{ vars.chartName }}
+          desiredRevision: ${{ chartFrom(vars.chartRepo, vars.chartName).Version }}
           updateTargetRevision: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
