@@ -12,10 +12,7 @@ metadata:
 spec:
   promotionPolicies:
   - stageSelector:
-      name: test
-    autoPromotionEnabled: true
-  - stageSelector:
-      name: uat
+      name: regex:^(test|uat)$
     autoPromotionEnabled: true
 ---
 apiVersion: v1

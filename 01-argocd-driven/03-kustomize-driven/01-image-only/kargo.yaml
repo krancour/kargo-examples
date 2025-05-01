@@ -12,13 +12,8 @@ metadata:
 spec:
   promotionPolicies:
   - stageSelector:
-      name: test
-    autoPromotionEnabled: true
-  - stageSelector:
-      name: uat
-    autoPromotionEnabled: true
-  - stageSelector:
-      name: prod
+      matchLabels:
+        example.org/auto-promote: "true"
     autoPromotionEnabled: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1
@@ -60,6 +55,8 @@ kind: Stage
 metadata:
   name: test
   namespace: kargo-demo-07
+  labels:
+    example.org/auto-promote: "true"
 spec:
   requestedFreight:
   - origin:
@@ -81,6 +78,8 @@ kind: Stage
 metadata:
   name: uat
   namespace: kargo-demo-07
+  labels:
+    example.org/auto-promote: "true"
 spec:
   requestedFreight:
   - origin:
@@ -103,6 +102,8 @@ kind: Stage
 metadata:
   name: prod
   namespace: kargo-demo-07
+  labels:
+    example.org/auto-promote: "true"
 spec:
   requestedFreight:
   - origin:
