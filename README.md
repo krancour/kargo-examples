@@ -19,11 +19,6 @@ machine. (You only need to clone _this_ repository.)
 > * `<github-pat>`, replace it with a GitHub personal access token capable of
 >   reading _and writing_ to your fork.
 >
-> * `<dockerhub-username>`, replace it with your Docker Hub handle.
->
-> * `<dockerhub-pat>`, replace it with a Docker Hub personal access token with
->   read-only permissions.
->
 > It is best to utilize your favorite text editor's search-and-replace feature
 > to carry out these substitutions.
 
