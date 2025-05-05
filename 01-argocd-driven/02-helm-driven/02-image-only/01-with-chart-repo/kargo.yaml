@@ -1,14 +1,24 @@
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
   name: kargo-demo-03
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-03
+  namespace: kargo-demo-03
 spec:
   promotionPolicies:
-  - stage: test
+  - stageSelector:
+      name: test
     autoPromotionEnabled: true
-  - stage: uat
+  - stageSelector:
+      name: uat
     autoPromotionEnabled: true
-  - stage: prod
+  - stageSelector:
+      name: prod
     autoPromotionEnabled: true
 ---
 apiVersion: kargo.akuity.io/v1alpha1

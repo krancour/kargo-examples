@@ -1,128 +1,18 @@
+---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
   name: kargo-demo-14
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-14
+  namespace: kargo-demo-14
 spec:
   promotionPolicies:
-  - stage: app-01-test
-    autoPromotionEnabled: true
-  - stage: app-01-uat
-    autoPromotionEnabled: true
-  - stage: app-01-prod
-    autoPromotionEnabled: true
-  - stage: app-02-test
-    autoPromotionEnabled: true
-  - stage: app-02-uat
-    autoPromotionEnabled: true
-  - stage: app-02-prod
-    autoPromotionEnabled: true
-  - stage: app-03-test
-    autoPromotionEnabled: true
-  - stage: app-03-uat
-    autoPromotionEnabled: true
-  - stage: app-03-prod
-    autoPromotionEnabled: true
-  - stage: app-04-test
-    autoPromotionEnabled: true
-  - stage: app-04-uat
-    autoPromotionEnabled: true
-  - stage: app-04-prod
-    autoPromotionEnabled: true
-  - stage: app-05-test
-    autoPromotionEnabled: true
-  - stage: app-05-uat
-    autoPromotionEnabled: true
-  - stage: app-05-prod
-    autoPromotionEnabled: true
-  - stage: app-06-test
-    autoPromotionEnabled: true
-  - stage: app-06-uat
-    autoPromotionEnabled: true
-  - stage: app-06-prod
-    autoPromotionEnabled: true
-  - stage: app-07-test
-    autoPromotionEnabled: true
-  - stage: app-07-uat
-    autoPromotionEnabled: true
-  - stage: app-07-prod
-    autoPromotionEnabled: true
-  - stage: app-08-test
-    autoPromotionEnabled: true
-  - stage: app-08-uat
-    autoPromotionEnabled: true
-  - stage: app-08-prod
-    autoPromotionEnabled: true
-  - stage: app-09-test
-    autoPromotionEnabled: true
-  - stage: app-09-uat
-    autoPromotionEnabled: true
-  - stage: app-09-prod
-    autoPromotionEnabled: true
-  - stage: app-10-test
-    autoPromotionEnabled: true
-  - stage: app-10-uat
-    autoPromotionEnabled: true
-  - stage: app-10-prod
-    autoPromotionEnabled: true
-  - stage: app-11-test
-    autoPromotionEnabled: true
-  - stage: app-11-uat
-    autoPromotionEnabled: true
-  - stage: app-11-prod
-    autoPromotionEnabled: true
-  - stage: app-12-test
-    autoPromotionEnabled: true
-  - stage: app-12-uat
-    autoPromotionEnabled: true
-  - stage: app-12-prod
-    autoPromotionEnabled: true
-  - stage: app-13-test
-    autoPromotionEnabled: true
-  - stage: app-13-uat
-    autoPromotionEnabled: true
-  - stage: app-13-prod
-    autoPromotionEnabled: true
-  - stage: app-14-test
-    autoPromotionEnabled: true
-  - stage: app-14-uat
-    autoPromotionEnabled: true
-  - stage: app-14-prod
-    autoPromotionEnabled: true
-  - stage: app-15-test
-    autoPromotionEnabled: true
-  - stage: app-15-uat
-    autoPromotionEnabled: true
-  - stage: app-15-prod
-    autoPromotionEnabled: true
-  - stage: app-16-test
-    autoPromotionEnabled: true
-  - stage: app-16-uat
-    autoPromotionEnabled: true
-  - stage: app-16-prod
-    autoPromotionEnabled: true
-  - stage: app-17-test
-    autoPromotionEnabled: true
-  - stage: app-17-uat
-    autoPromotionEnabled: true
-  - stage: app-17-prod
-    autoPromotionEnabled: true
-  - stage: app-18-test
-    autoPromotionEnabled: true
-  - stage: app-18-uat
-    autoPromotionEnabled: true
-  - stage: app-18-prod
-    autoPromotionEnabled: true
-  - stage: app-19-test
-    autoPromotionEnabled: true
-  - stage: app-19-uat
-    autoPromotionEnabled: true
-  - stage: app-19-prod
-    autoPromotionEnabled: true
-  - stage: app-20-test
-    autoPromotionEnabled: true
-  - stage: app-20-uat
-    autoPromotionEnabled: true
-  - stage: app-20-prod
+  - stageSelector:
+      name: glob:app-*-*
     autoPromotionEnabled: true
 ---
 apiVersion: v1
