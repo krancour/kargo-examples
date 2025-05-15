@@ -45,15 +45,18 @@ spec:
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask
 metadata:
-  name: base-promo-process
+  name: promo-process
   namespace: kargo-demo-12
 spec:
   vars:
   - name: gitRepo
-  - name: targetBranch
-  - name: outPath
+    value: ${{ secret('manifests').repoURL }}
   - name: imageRepo
     value: public.ecr.aws/nginx/nginx
+  - name: targetBranch
+    value: 12/stage/${{ ctx.stage }}
+  - name: outPath
+    value: ./out
   steps:
   - uses: git-clone
     config:
@@ -83,9 +86,32 @@ spec:
     config:
       path: ${{ vars.outPath }}
       message: ${{ task.outputs['update-image'].commitMessage }}
-  - uses: compose-output
+  - uses: git-push
+    as: push
     config:
-      commit: ${{ task.outputs.commit.commit }}
+      path: ${{ vars.outPath }}
+      generateTargetBranch: ${{ vars.usePR == 'true' }}
+  - uses: git-open-pr
+    as: open-pr
+    if: ${{ vars.usePR == 'true' }}
+    config:
+      repoURL: ${{ vars.gitRepo }}
+      createTargetBranch: true
+      sourceBranch: ${{ task.outputs.push.branch }}
+      targetBranch: ${{ vars.targetBranch }}
+  - uses: git-wait-for-pr
+    as: wait-for-pr
+    if: ${{ vars.usePR == 'true' }}
+    config:
+      repoURL: ${{ vars.gitRepo }}
+      prNumber: ${{ task.outputs['open-pr'].prNumber }}
+  - uses: argocd-update
+    config:
+      apps:
+      - name: ${{ ctx.project }}-${{ ctx.stage }}
+        sources:
+        - repoURL: ${{ vars.gitRepo }}
+          desiredRevision: "${{ vars.usePR == 'true' ? task.outputs['wait-for-pr'].commit : task.outputs.push.commit }}"
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -102,26 +128,11 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: ${{ secret('manifests').repoURL }}
-      - name: targetBranch
-        value: 12/stage/${{ ctx.stage }}
-      - name: outPath
-        value: ./out
+      - name: usePR
+        value: "false"
       steps:
       - task:
-          name: base-promo-process
-        as: base
-      - uses: git-push
-        config:
-          path: ${{ vars.outPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: ${{ ctx.project }}-${{ ctx.stage }}
-            sources:
-            - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: ${{ outputs.base.commit }}
+          name: promo-process
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -142,26 +153,11 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: ${{ secret('manifests').repoURL }}
-      - name: targetBranch
-        value: 12/stage/${{ ctx.stage }}
-      - name: outPath
-        value: ./out
+      - name: usePR
+        value: "false"
       steps:
       - task:
-          name: base-promo-process
-        as: base
-      - uses: git-push
-        config:
-          path: ${{ vars.outPath }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: ${{ ctx.project }}-${{ ctx.stage }}
-            sources:
-            - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: ${{ outputs.base.commit }}
+          name: promo-process
   verification:
     analysisTemplates:
     - name: kargo-demo
@@ -182,39 +178,11 @@ spec:
   promotionTemplate:
     spec:
       vars:
-      - name: gitRepo
-        value: ${{ secret('manifests').repoURL }}
-      - name: targetBranch
-        value: 12/stage/${{ ctx.stage }}
-      - name: outPath
-        value: ./out
+      - name: usePR
+        value: "true"
       steps:
       - task:
-          name: base-promo-process
-      - uses: git-push
-        as: push
-        config:
-          path: ${{ vars.outPath }}
-          generateTargetBranch: true
-      - uses: git-open-pr
-        as: open-pr
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          createTargetBranch: true
-          sourceBranch: ${{ outputs.push.branch }}
-          targetBranch: ${{ vars.targetBranch }}
-      - uses: git-wait-for-pr
-        as: wait-for-pr
-        config:
-          repoURL: ${{ vars.gitRepo }}
-          prNumber: ${{ outputs['open-pr'].prNumber }}
-      - uses: argocd-update
-        config:
-          apps:
-          - name: ${{ ctx.project }}-${{ ctx.stage }}
-            sources:
-            - repoURL: ${{ vars.gitRepo }}
-              desiredRevision: ${{ outputs['wait-for-pr'].commit }}
+          name: promo-process
   verification:
     analysisTemplates:
     - name: kargo-demo
