@@ -47,7 +47,7 @@ metadata:
 spec:
   subscriptions:
   - git:
-      repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       branch: kustomize
   - image:
       repoURL: public.ecr.aws/nginx/nginx
