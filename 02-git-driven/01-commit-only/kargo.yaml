@@ -106,7 +106,7 @@ metadata:
 spec:
   subscriptions:
   - git:
-      repoURL: https://github.com/krancour/kargo-demo-gitops-2.git
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
       branch: kustomize
 ---
 apiVersion: kargo.akuity.io/v1alpha1
