@@ -170,11 +170,6 @@ spec:
   - name: imageRepo
     value: public.ecr.aws/nginx/nginx
   steps:
-  # Promotion should fail because http fails. All other steps should be skipped.
-  - uses: http
-    config:
-      method: GET
-      url: https://www.catfacts.net/api/bogus
   - uses: git-clone
     config:
       repoURL: ${{ vars.gitRepo }}
