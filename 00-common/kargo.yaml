@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: bitbucket-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: dockerhub-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gitlab-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret-token: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: quay-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ClusterConfig
+metadata:
+  name: cluster
+spec:
+  webhookReceivers:
+  - name: bitbucket
+    bitbucket:
+      secretRef:
+        name: bitbucket-receiver
+  - name: dockerhub
+    dockerhub:
+      secretRef:
+        name: dockerhub-receiver
+  - name: github
+    github:
+      secretRef:
+        name: github-receiver
+  - name: gitlab
+    gitlab:
+      secretRef:
+        name: gitlab-receiver
+  - name: quay
+    quay:
+      secretRef:
+        name: quay-receiver
