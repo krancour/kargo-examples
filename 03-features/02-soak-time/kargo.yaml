@@ -28,6 +28,8 @@ spec:
   - image:
       repoURL: public.ecr.aws/nginx/nginx
       semverConstraint: ^1.24.0
+      strictSemvers: true
+      discoveryLimit: 3
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask
