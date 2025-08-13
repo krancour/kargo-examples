@@ -106,7 +106,7 @@ spec:
     if: ${{ vars.usePR == 'true' }}
     config:
       repoURL: ${{ vars.gitRepo }}
-      prNumber: ${{ task.outputs['open-pr'].prNumber }}
+      prNumber: ${{ task.outputs['open-pr'].pr.id }}
   - uses: argocd-update
     config:
       apps:

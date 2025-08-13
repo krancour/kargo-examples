@@ -328,7 +328,7 @@ spec:
         as: wait-for-pr
         config:
           repoURL: ${{ vars.gitRepo }}
-          prNumber: ${{ outputs['open-pr'].prNumber }}
+          prNumber: ${{ outputs['open-pr'].pr.id }}
       - uses: argocd-update
         config:
           apps:
