@@ -1,6 +1,22 @@
 apiVersion: v1
 kind: Secret
 metadata:
+  name: artifactory-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret-token: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: azure-receiver
+  namespace: kargo-cluster-secrets
+data:
+  secret: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: bitbucket-receiver
   namespace: kargo-cluster-secrets
 data:
@@ -44,6 +60,14 @@ metadata:
   name: cluster
 spec:
   webhookReceivers:
+  - name: artifactory
+    artifactory:
+      secretRef:
+        name: artifactory-receiver
+  - name: azure
+    azure:
+      secretRef:
+        name: azure-receiver
   - name: bitbucket
     bitbucket:
       secretRef:
