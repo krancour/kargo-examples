@@ -104,10 +104,10 @@ spec:
     as: push
     config:
       path: ${{ vars.outPath }}
-      generateTargetBranch: ${{ vars.usePR == 'true' }}
+      generateTargetBranch: ${{ vars.usePR }}
   - uses: git-open-pr
     as: open-pr
-    if: ${{ vars.usePR == 'true' }}
+    if: ${{ vars.usePR }}
     config:
       repoURL: ${{ vars.gitRepo }}
       createTargetBranch: true
@@ -115,7 +115,7 @@ spec:
       targetBranch: ${{ vars.targetBranch }}
   - uses: git-wait-for-pr
     as: wait-for-pr
-    if: ${{ vars.usePR == 'true' }}
+    if: ${{ vars.usePR }}
     config:
       repoURL: ${{ vars.gitRepo }}
       prNumber: ${{ task.outputs['open-pr'].pr.id }}
@@ -125,7 +125,7 @@ spec:
       - name: ${{ ctx.project }}-${{ ctx.stage }}
         sources:
         - repoURL: ${{ vars.gitRepo }}
-          desiredRevision: "${{ vars.usePR == 'true' ? task.outputs['wait-for-pr'].commit : task.outputs.push.commit }}"  
+          desiredRevision: "${{ vars.usePR ? task.outputs['wait-for-pr'].commit : task.outputs.push.commit }}"  
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
@@ -143,7 +143,7 @@ spec:
     spec:
       vars:
       - name: usePR
-        value: "false"
+        value: ${{ false }}
       steps:
       - task:
           name: promo-process
@@ -168,7 +168,7 @@ spec:
     spec:
       vars:
       - name: usePR
-        value: "false"
+        value: ${{ false }}
       steps:
       - task:
           name: promo-process
@@ -193,7 +193,7 @@ spec:
     spec:
       vars:
       - name: usePR
-        value: "true"
+        value: ${{ true }}
       steps:
       - task:
           name: promo-process
