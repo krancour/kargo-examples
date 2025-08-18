@@ -49,6 +49,14 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
+  name: harbor-receiver
+  namespace: kargo-cluster-secrets
+data:
+  auth-header: c295bGVudCBncmVlbiBpcyBwZW9wbGU=
+---
+apiVersion: v1
+kind: Secret
+metadata:
   name: quay-receiver
   namespace: kargo-cluster-secrets
 data:
@@ -84,6 +92,10 @@ spec:
     gitlab:
       secretRef:
         name: gitlab-receiver
+  - name: harbor
+    harbor:
+      secretRef:
+        name: harbor-receiver
   - name: quay
     quay:
       secretRef:
