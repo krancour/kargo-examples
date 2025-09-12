@@ -58,6 +58,22 @@ spec:
     value: public.ecr.aws/nginx/nginx
   - name: usePR
   steps:
+  - uses: set-metadata
+    config:
+      updates:
+      - kind: Stage
+        name: ${{ ctx.stage }}
+        values:
+          lastPromotedAt: ${{ now() }}
+  - uses: set-metadata
+    config:
+      updates:
+      - kind: Freight
+        name: ${{ ctx.targetFreight.name }}
+        values:
+          lastPromoted:
+            at: ${{ stageMetadata(ctx.stage).lastPromotedAt }}
+            to: ${{ ctx.stage }}
   - uses: git-clone
     config:
       repoURL: ${{ vars.gitRepo }}

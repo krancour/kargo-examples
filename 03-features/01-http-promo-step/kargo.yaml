@@ -52,6 +52,22 @@ spec:
   - name: slackChannel
     value: C123456 # Totally fake
   steps:
+  - uses: set-metadata
+    config:
+      updates:
+      - kind: Stage
+        name: ${{ ctx.stage }}
+        values:
+          lastPromotedAt: ${{ now() }}
+  - uses: set-metadata
+    config:
+      updates:
+      - kind: Freight
+        name: ${{ ctx.targetFreight.name }}
+        values:
+          lastPromoted:
+            at: ${{ stageMetadata(ctx.stage).lastPromotedAt }}
+            to: ${{ ctx.stage }}
   - uses: http
     config:
       method: POST

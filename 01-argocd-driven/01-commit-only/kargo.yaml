@@ -43,6 +43,22 @@ spec:
   - name: gitRepo
     value: https://github.com/<github-username>/kargo-demo-gitops.git
   steps:
+  - uses: set-metadata
+    config:
+      updates:
+      - kind: Stage
+        name: ${{ ctx.stage }}
+        values:
+          lastPromotedAt: ${{ now() }}
+  - uses: set-metadata
+    config:
+      updates:
+      - kind: Freight
+        name: ${{ ctx.targetFreight.name }}
+        values:
+          lastPromoted:
+            at: ${{ stageMetadata(ctx.stage).lastPromotedAt }}
+            to: ${{ ctx.stage }}
   - uses: argocd-update
     config:
       apps:
