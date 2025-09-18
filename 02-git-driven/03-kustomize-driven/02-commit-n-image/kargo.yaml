@@ -26,19 +26,6 @@ metadata:
 data:
   imageRepoURL: public.ecr.aws/nginx/nginx
 ---
-apiVersion: v1
-kind: Secret
-type: Opaque
-metadata:
-  name: manifests
-  namespace: kargo-demo-13
-  labels:
-    kargo.akuity.io/cred-type: git
-stringData:
-  repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
-  username: <github-username>
-  password: <github-pat>
----
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
@@ -63,7 +50,7 @@ metadata:
 spec:
   vars:
   - name: gitRepo
-    value: ${{ secret('manifests').repoURL }}
+    value: https://github.com/<github-username>/kargo-demo-gitops.git
   - name: imageRepo
     value: public.ecr.aws/nginx/nginx
   - name: targetBranch

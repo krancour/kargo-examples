@@ -100,3 +100,36 @@ spec:
     quay:
       secretRef:
         name: quay-receiver
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: shared-credentials
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: github
+  namespace: shared-credentials
+  labels:
+    kargo.akuity.io/cred-type: git
+stringData:
+  repoURL: "^https://github.com/<github-username>/.*"
+  repoURLIsRegex: "true"
+  username: <github-username>
+  password: <github-pat>
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+    name: kargo-controller-read-secrets
+    namespace: shared-credentials
+subjects:
+    - kind: ServiceAccount
+      name: kargo-controller
+      namespace: kargo
+roleRef:
+    kind: ClusterRole
+    name: kargo-controller-read-secrets
+    apiGroup: rbac.authorization.k8s.io
