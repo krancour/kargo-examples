@@ -27,7 +27,7 @@ spec:
   subscriptions:
   - image:
       repoURL: public.ecr.aws/nginx/nginx
-      semverConstraint: ^1.24.0
+      constraint: ^1.24.0
       strictSemvers: true
       discoveryLimit: 3
 ---

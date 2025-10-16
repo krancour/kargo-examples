@@ -87,19 +87,20 @@ spec:
       createTargetBranch: true
       sourceBranch: ${{ task.outputs.push.branch }}
       targetBranch: ${{ vars.targetBranch }}
-  - uses: git-wait-for-pr
-    as: wait-for-pr
+  - uses: git-merge-pr
+    as: merge-pr
     if: ${{ vars.usePR }}
     config:
       repoURL: ${{ vars.gitRepo }}
       prNumber: ${{ task.outputs['open-pr'].pr.id }}
+      wait: true
   - uses: argocd-update
     config:
       apps:
       - name: ${{ ctx.project }}-${{ ctx.stage }}
         sources:
         - repoURL: ${{ vars.gitRepo }}
-          desiredRevision: "${{ vars.usePR ? task.outputs['wait-for-pr'].commit : task.outputs.push.commit }}"
+          desiredRevision: "${{ vars.usePR ? task.outputs['merge-pr'].commit : task.outputs.push.commit }}"
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
