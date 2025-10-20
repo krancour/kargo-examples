@@ -29,10 +29,9 @@ metadata:
 spec:
   subscriptions:
   - image:
-      repoURL: public.ecr.aws/nginx/nginx
-      constraint: ^1.24.0
-      strictSemvers: true
-      discoveryLimit: 3
+      repoURL: bitnami/nginx
+      imageSelectionStrategy: Digest
+      constraint: latest
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask
@@ -42,7 +41,7 @@ metadata:
 spec:
   vars:
   - name: imageRepo
-    value: public.ecr.aws/nginx/nginx
+    value: bitnami/nginx
   steps:
   - uses: set-metadata
     config:
@@ -69,8 +68,8 @@ spec:
           chart: nginx
           helm:
             images:
-            - key: image.tag
-              value: ${{ imageFrom(vars.imageRepo).Tag }}
+            - key: image.digest
+              value: ${{ imageFrom(vars.imageRepo).Digest }}
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
