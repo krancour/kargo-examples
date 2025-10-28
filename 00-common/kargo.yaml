@@ -104,14 +104,14 @@ spec:
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: shared-credentials
+  name: kargo-shared-credentials
 ---
 apiVersion: v1
 kind: Secret
 type: Opaque
 metadata:
   name: github
-  namespace: shared-credentials
+  namespace: kargo-shared-credentials
   labels:
     kargo.akuity.io/cred-type: git
 stringData:
@@ -124,7 +124,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
     name: kargo-controller-read-secrets
-    namespace: shared-credentials
+    namespace: kargo-shared-credentials
 subjects:
     - kind: ServiceAccount
       name: kargo-controller
