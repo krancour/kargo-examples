@@ -1,0 +1,139 @@
+---
+# A self-signed HTTPS Helm chart repository, deployed in-cluster, so the
+# `insecureSkipTLSVerify: true` flag on the chart subscription is actually
+# meaningful (without it, discovery fails with `x509: certificate signed
+# by unknown authority`).
+#
+# Pieces:
+#   - cert-manager SelfSigned Issuer + Certificate produces a TLS Secret.
+#   - An initContainer packages a tiny test chart into an emptyDir.
+#   - ChartMuseum serves that chart over HTTPS using the self-signed cert.
+#   - A Service exposes it as `chart-repo.kargo-demo-28.svc:8443`.
+#
+# cert-manager is required (Tilt installs it automatically). If you're
+# running Kargo some other way, install cert-manager first.
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: chart-repo-selfsigned
+  namespace: kargo-demo-28
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: chart-repo-tls
+  namespace: kargo-demo-28
+spec:
+  secretName: chart-repo-tls
+  issuerRef:
+    name: chart-repo-selfsigned
+    kind: Issuer
+  commonName: chart-repo.kargo-demo-28.svc
+  dnsNames:
+  - chart-repo.kargo-demo-28.svc
+  - chart-repo.kargo-demo-28.svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chart-repo
+  namespace: kargo-demo-28
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chart-repo
+  template:
+    metadata:
+      labels:
+        app: chart-repo
+    spec:
+      initContainers:
+      # Builds a few versions of a tiny "hello" chart and drops the
+      # .tgz files into the shared volume. ChartMuseum picks them up
+      # automatically and synthesizes the index.yaml.
+      - name: package-charts
+        image: alpine/helm:3.16.2
+        command:
+        - sh
+        - -c
+        - |
+          set -eu
+          for v in 1.0.0 1.0.1 1.1.0; do
+            rm -rf /tmp/hello
+            mkdir -p /tmp/hello/templates
+            cat > /tmp/hello/Chart.yaml <<CHARTEOF
+          apiVersion: v2
+          name: hello
+          version: ${v}
+          description: A tiny test chart for kargo-demo-28
+          type: application
+          appVersion: "${v}"
+          CHARTEOF
+            cat > /tmp/hello/templates/configmap.yaml <<'CMEOF'
+          apiVersion: v1
+          kind: ConfigMap
+          metadata:
+            name: {{ .Release.Name }}-hello
+          data:
+            greeting: "{{ .Values.greeting | default "world" }}"
+          CMEOF
+            helm package /tmp/hello -d /charts
+          done
+          ls -l /charts
+        volumeMounts:
+        - name: charts
+          mountPath: /charts
+      containers:
+      - name: chartmuseum
+        image: ghcr.io/helm/chartmuseum:v0.16.5
+        env:
+        - name: STORAGE
+          value: local
+        - name: STORAGE_LOCAL_ROOTDIR
+          value: /charts
+        - name: PORT
+          value: "8443"
+        - name: TLS_CERT
+          value: /tls/tls.crt
+        - name: TLS_KEY
+          value: /tls/tls.key
+        - name: DISABLE_API
+          value: "true"        # read-only; we don't need the upload API
+        - name: ALLOW_OVERWRITE
+          value: "false"
+        ports:
+        - name: https
+          containerPort: 8443
+        readinessProbe:
+          tcpSocket:
+            port: 8443
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        volumeMounts:
+        - name: charts
+          mountPath: /charts
+        - name: tls
+          mountPath: /tls
+          readOnly: true
+      volumes:
+      - name: charts
+        emptyDir: {}
+      - name: tls
+        secret:
+          secretName: chart-repo-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chart-repo
+  namespace: kargo-demo-28
+spec:
+  selector:
+    app: chart-repo
+  ports:
+  - name: https
+    port: 8443
+    targetPort: 8443

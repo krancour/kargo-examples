@@ -1,0 +1,50 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-27
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-27
+spec:
+  subscriptions:
+  # The novel field: `since` is an RFC 3339 cutoff. Discovery walks the
+  # commit history newest-to-oldest and stops as soon as it reaches a
+  # commit older than this date. Useful for repositories with very long
+  # histories where you don't want Kargo crawling years of commits.
+  #
+  # Only meaningful when `commitSelectionStrategy` is `NewestFromBranch`
+  # (the default), since the others stop at the first matching tag and
+  # don't walk history.
+  - git:
+      repoURL: https://github.com/akuity/kargo.git
+      branch: main
+      since: "2026-04-13T17:05:15Z"
+      discoveryLimit: 100
+---
+# Single direct stage so the discovered Freight is visible immediately.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-27
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              lastPromotedAt: ${{ now() }}

@@ -1,0 +1,69 @@
+---
+# A regular Secret in the shared resources namespace, opted into
+# replication by an annotation. Kargo's management controller copies
+# this Secret into every Project namespace and stamps a
+# `kargo.akuity.io/replicated-at` timestamp on each replica.
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: shared-config
+  namespace: kargo-shared-resources
+  labels:
+    # REQUIRED for Secret replication. The Secret adapter's
+    # shouldReconcile() silently skips Secrets that aren't labeled with
+    # a credential type. Values Kargo recognizes are `git`, `image`,
+    # `helm`, and `generic`. ConfigMaps have no equivalent gate.
+    kargo.akuity.io/cred-type: generic
+  annotations:
+    # The only supported value today is "*" — replicate to ALL projects.
+    kargo.akuity.io/replicate-to: "*"
+stringData:
+  greeting: "Hello from the shared config secret!"
+  apiBaseURL: "https://api.example.com/v1"
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-29
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-29
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# Promotion uses `secret('shared-config').…` to read fields out of the
+# replicated Secret. If replication didn't happen, this would fail with
+# "secret not found in project namespace".
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-29
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              greeting: ${{ secret('shared-config').greeting }}
+              apiBaseURL: ${{ secret('shared-config').apiBaseURL }}
+              lastPromotedAt: ${{ now() }}

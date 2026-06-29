@@ -1,0 +1,94 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-22
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-22
+  namespace: kargo-demo-22
+spec:
+  promotionPolicies:
+  # Both stages auto-promote so the validation runs end-to-end without
+  # manual intervention. `test` will succeed; `prod` will FAIL by design.
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: prod
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-22
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# `test` stage: the `fail` step is gated by an `if` that the discovered
+# nginx tag never satisfies (no `-rc`, `-alpha`, `-beta` in stable nginx).
+# The promotion proceeds past it.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-22
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      - uses: fail
+        if: ${{ imageFrom(vars.imageRepo).Tag matches "(rc|alpha|beta)" }}
+        config:
+          message: >-
+            Refusing to promote pre-release tag
+            ${{ imageFrom(vars.imageRepo).Tag }}.
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              lastPromotedAt: ${{ now() }}
+---
+# `prod` stage: the `fail` step has NO `if`, so it ALWAYS fires. The
+# promotion will end with phase=Failed and the message below visible on
+# the Promotion's step status.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: prod
+  namespace: kargo-demo-22
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: fail
+        config:
+          message: >-
+            Manual approval required for prod promotion of
+            ${{ ctx.targetFreight.name }}.

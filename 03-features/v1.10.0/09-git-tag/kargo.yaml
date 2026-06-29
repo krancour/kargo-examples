@@ -1,0 +1,120 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-23
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-23
+  namespace: kargo-demo-23
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-23
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+      branch: kustomize
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# The single stage creates an annotated tag of the form
+# `v<image-tag>-<promotion-name>` whenever Freight is promoted. Two
+# `git-push` steps are required: one call may push only ONE of
+# `targetBranch`, `generateTargetBranch`, or `tag` (per the schema's
+# `oneOf`).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-23
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      - name: targetBranch
+        value: 23/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          author:
+            name: Kargo Demo Bot
+            email: kargo-demo@example.com
+          checkout:
+          - commit: ${{ commitFrom(vars.gitRepo).ID }}
+            path: ./src
+          - branch: ${{ vars.targetBranch }}
+            create: true
+            path: ${{ vars.outPath }}
+      - uses: git-clear
+        config:
+          path: ${{ vars.outPath }}
+      - uses: kustomize-set-image
+        as: update-image
+        config:
+          path: ./src/base
+          images:
+          - image: ${{ vars.imageRepo }}
+            tag: ${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: kustomize-build
+        config:
+          path: ./src/stages/${{ ctx.stage }}
+          outPath: ${{ vars.outPath }}
+      - uses: git-commit
+        as: commit
+        config:
+          path: ${{ vars.outPath }}
+          message: ${{ outputs['update-image'].commitMessage }}
+      # Push the branch first so the tag's commit exists on the remote.
+      - uses: git-push
+        as: push-branch
+        config:
+          path: ${{ vars.outPath }}
+      # Create an annotated tag locally on the working tree.
+      - uses: git-tag
+        as: tag
+        config:
+          path: ${{ vars.outPath }}
+          tag: v${{ imageFrom(vars.imageRepo).Tag }}-${{ ctx.promotion }}
+          message: |
+            Release ${{ imageFrom(vars.imageRepo).Tag }} promoted to
+            ${{ ctx.stage }} by ${{ ctx.promotion }}.
+      # Second git-push: push ONLY the tag this time.
+      - uses: git-push
+        as: push-tag
+        config:
+          path: ${{ vars.outPath }}
+          tag: v${{ imageFrom(vars.imageRepo).Tag }}-${{ ctx.promotion }}
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ outputs['push-branch'].commit }}

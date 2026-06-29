@@ -1,0 +1,50 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-32
+---
+# Warehouse subscribes to the `manifests` branch of the demo repo and uses
+# `includePaths` to limit which file changes trigger new Freight production.
+#
+# The webhook receiver (configured cluster-wide in 00-common/kargo.yaml)
+# now (PR #5611) extracts the changed file list from the GitHub push
+# payload and consults this `includePaths` list. A push that touches only
+# `README.md` is dropped on the floor; a push that touches `manifests/…`
+# refreshes the Warehouse.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-32
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+      branch: manifests
+      includePaths:
+      - manifests/
+      discoveryLimit: 20
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-32
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              lastPromotedAt: ${{ now() }}

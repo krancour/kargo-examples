@@ -27,9 +27,7 @@ spec:
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-16-{{stage}}
-      syncPolicy:
-        syncOptions:
-        - CreateNamespace=true
+      syncPolicy: {}
   ignoreApplicationDifferences:
   - jqPathExpressions:
     - .spec.source.kustomize.images

@@ -1,0 +1,67 @@
+---
+# Pre-create the Namespace ourselves and tag it with the keep-namespace
+# annotation. When the Project is deleted, Kargo will delete its own
+# resources but leave this Namespace standing.
+#
+# The same annotation also works on the Project resource itself; choose
+# whichever is more convenient. Setting it on the Namespace is useful when
+# the Namespace pre-existed Kargo and contains other workloads you don't
+# want disrupted by Project lifecycle events.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kargo-demo-30
+  annotations:
+    kargo.akuity.io/keep-namespace: "true"
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-30
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-30
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-30
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              lastPromotedAt: ${{ now() }}
+---
+# An unrelated workload in the same namespace, to make the survival of
+# the namespace meaningful: a ConfigMap that has nothing to do with
+# Kargo. It should still be there after the Project is deleted.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-other-app-config
+  namespace: kargo-demo-30
+data:
+  msg: "I am not managed by Kargo. Please don't delete me."

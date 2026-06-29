@@ -1,0 +1,66 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-20
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-20
+  namespace: kargo-demo-20
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-20
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-20
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: srcRepo
+        value: public.ecr.aws/nginx/nginx
+      # ttl.sh is an anonymous, ephemeral OCI registry. Pushed images
+      # live for the suffix encoded in the tag (here `1h`) and require
+      # no credentials. Perfect for validation; do NOT rely on it in
+      # production.
+      - name: destRepo
+        value: ttl.sh/kargo-demo-20
+      steps:
+      # Copy the image discovered upstream to a stage-specific tag in
+      # the destination registry. Because srcRef is content-addressed
+      # (digest), the push is idempotent.
+      - uses: oci-push
+        as: push
+        config:
+          srcRef: ${{ vars.srcRepo }}@${{ imageFrom(vars.srcRepo).Digest }}
+          destRef: ${{ vars.destRepo }}:${{ ctx.stage }}-${{ imageFrom(vars.srcRepo).Tag }}-1h
+          annotations:
+            org.opencontainers.image.source: ${{ vars.srcRepo }}
+            manifest:io.kargo.promotion: ${{ ctx.promotion }}
+            manifest:io.kargo.stage: ${{ ctx.stage }}

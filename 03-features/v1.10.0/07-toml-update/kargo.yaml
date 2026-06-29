@@ -1,0 +1,109 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-21
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-21
+  namespace: kargo-demo-21
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-21
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+      branch: toml
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-21
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      - name: targetBranch
+        value: 21/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          author:
+            name: Kargo Demo Bot
+            email: kargo-demo@example.com
+          checkout:
+          - commit: ${{ commitFrom(vars.gitRepo).ID }}
+            path: ./src
+          - branch: ${{ vars.targetBranch }}
+            create: true
+            path: ${{ vars.outPath }}
+      - uses: git-clear
+        config:
+          path: ${{ vars.outPath }}
+      - uses: copy
+        config:
+          inPath: ./src
+          outPath: ${{ vars.outPath }}
+      # First TOML manipulation: a NESTED key.
+      - uses: toml-update
+        as: update-image
+        config:
+          path: ${{ vars.outPath }}/configs/settings.toml
+          updates:
+          - key: image.tag
+            value: ${{ imageFrom(vars.imageRepo).Tag }}
+          - key: package.version
+            value: ${{ imageFrom(vars.imageRepo).Tag }}
+      # Second toml-update demonstrates a key whose name CONTAINS a
+      # literal dot (e.g. a Kubernetes-style label). The path syntax
+      # escapes the in-key dot with a backslash. Per the toml-update
+      # reference, this follows sjson path syntax.
+      - uses: toml-update
+        as: update-label
+        config:
+          path: ${{ vars.outPath }}/configs/settings.toml
+          updates:
+          - key: labels.example\.com/version
+            value: ${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: git-commit
+        as: commit
+        config:
+          path: ${{ vars.outPath }}
+          message: |
+            ${{ outputs['update-image'].commitMessage }}
+
+            ${{ outputs['update-label'].commitMessage }}
+      - uses: git-push
+        as: push
+        config:
+          path: ${{ vars.outPath }}

@@ -1,0 +1,144 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-25
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-25
+  namespace: kargo-demo-25
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-25
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+      branch: kustomize
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# Single-stage PR flow: open a PR with the rendered manifests, then
+# SQUASH-merge it. The squashed merge replaces N small commits with a
+# single, cleanly annotated commit on the target branch.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-25
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      - name: targetBranch
+        value: 25/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          author:
+            name: Kargo Demo Bot
+            email: kargo-demo@example.com
+          checkout:
+          - commit: ${{ commitFrom(vars.gitRepo).ID }}
+            path: ./src
+          - branch: ${{ vars.targetBranch }}
+            create: true
+            path: ${{ vars.outPath }}
+      - uses: git-clear
+        config:
+          path: ${{ vars.outPath }}
+      # ---- Commit 1/2 ----
+      # Stage the manifests with a placeholder image tag. This proves
+      # the squash merge actually collapses multiple source commits;
+      # if the source branch had only one commit, squash would be
+      # indistinguishable from `merge` or `rebase`.
+      - uses: kustomize-set-image
+        config:
+          path: ./src/base
+          images:
+          - image: ${{ vars.imageRepo }}
+            tag: pending
+      - uses: kustomize-build
+        config:
+          path: ./src/stages/${{ ctx.stage }}
+          outPath: ${{ vars.outPath }}/manifests.yaml
+      - uses: git-commit
+        config:
+          path: ${{ vars.outPath }}
+          message: "1/2: Stage manifests with placeholder image tag"
+      # ---- Commit 2/2 ----
+      # Apply the real image tag and re-render. kustomize-build
+      # truncates the .yaml outPath, so this commit captures only the
+      # diff (the changed `image:` line in the rendered manifests).
+      - uses: kustomize-set-image
+        as: update-image
+        config:
+          path: ./src/base
+          images:
+          - image: ${{ vars.imageRepo }}
+            tag: ${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: kustomize-build
+        config:
+          path: ./src/stages/${{ ctx.stage }}
+          outPath: ${{ vars.outPath }}/manifests.yaml
+      - uses: git-commit
+        config:
+          path: ${{ vars.outPath }}
+          message: "2/2: ${{ outputs['update-image'].commitMessage }}"
+      - uses: git-push
+        as: push
+        config:
+          path: ${{ vars.outPath }}
+          generateTargetBranch: true
+      - uses: git-open-pr
+        as: open-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          sourceBranch: ${{ outputs.push.branch }}
+          targetBranch: ${{ vars.targetBranch }}
+          title: |
+            Promote ${{ imageFrom(vars.imageRepo).Tag }} to ${{ ctx.stage }}
+      # The 1.10 feature: pick a merge method. For GitHub, `squash`
+      # collapses all commits on the source branch into a single commit
+      # on targetBranch. `merge` (the default) creates a merge commit;
+      # `rebase` replays each source commit on top of target.
+      - uses: git-merge-pr
+        as: merge-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          prNumber: ${{ outputs['open-pr'].pr.id }}
+          mergeMethod: squash
+          wait: true
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ outputs['merge-pr'].commit }}

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: artifactory-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -12,7 +12,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: azure-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -22,7 +22,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: bitbucket-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -32,7 +32,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: dockerhub-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -42,7 +42,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: generic-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -52,7 +52,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: github-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -62,7 +62,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: gitlab-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -72,7 +72,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: harbor-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -82,7 +82,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: quay-receiver
-  namespace: kargo-cluster-secrets
+  namespace: kargo-system-resources
   labels:
     kargo.akuity.io/cred-type: generic
 data:
@@ -93,6 +93,11 @@ kind: ClusterConfig
 metadata:
   name: cluster
 spec:
+  gitClient:
+    name: Kargo Test Key
+    email: no-reply@kargo.io
+    signingKeySecret:
+      name: gpg-signing-key
   webhookReceivers:
   - name: artifactory
     artifactory:
@@ -150,3 +155,35 @@ stringData:
   repoURLIsRegex: "true"
   username: <github-username>
   password: <github-pat>
+# ---
+# apiVersion: v1
+# kind: Secret
+# type: Opaque
+# metadata:
+#   name: github
+#   namespace: kargo-shared-resources
+#   labels:
+#     kargo.akuity.io/cred-type: git
+# stringData:
+#   repoURL: "^https://github.com/<github-username>/.*"
+#   repoURLIsRegex: "true"
+#   githubAppClientID: <github-app-client-id>
+#   githubAppPrivateKey: |
+#     -----BEGIN RSA PRIVATE KEY-----
+#     <placeholder-for-github-app-private-key>
+#     -----END RSA PRIVATE KEY-----
+#   githubAppInstallationID: <github-app-installation-id>
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: gpg-signing-key
+  namespace: kargo-system-resources
+  labels:
+    kargo.akuity.io/cred-type: generic
+type: Opaque
+stringData:
+  signingKey: |
+    -----BEGIN PGP PRIVATE KEY BLOCK-----
+    <placeholder>
+    -----END PGP PRIVATE KEY BLOCK-----

@@ -1,0 +1,63 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-24
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-24
+  namespace: kargo-demo-24
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-24
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-24
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      # The first promotion to ever pull a given image tag will succeed.
+      # Subsequent promotions of the SAME tag (e.g. if you re-trigger the
+      # warehouse) will FAIL with "alias already in use" — that's the
+      # uniqueness constraint demonstrated in the README's troubleshooting.
+      - uses: set-freight-alias
+        config:
+          name: ${{ ctx.targetFreight.name }}
+          alias: nginx-${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              lastPromotedAt: ${{ now() }}

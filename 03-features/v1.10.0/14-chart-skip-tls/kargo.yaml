@@ -1,0 +1,48 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-28
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-28
+spec:
+  subscriptions:
+  # Points at the in-cluster ChartMuseum from chart-repo.yaml. The cert
+  # served by ChartMuseum is signed by a self-signed cert-manager Issuer
+  # (no public CA in the chain), so without `insecureSkipTLSVerify: true`
+  # discovery would fail with `x509: certificate signed by unknown
+  # authority`. To prove that, set the flag to `false` and re-apply —
+  # Warehouse status will reflect the TLS error.
+  - chart:
+      repoURL: https://chart-repo.kargo-demo-28.svc:8443
+      name: hello
+      semverConstraint: ^1.0.0
+      discoveryLimit: 5
+      insecureSkipTLSVerify: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-28
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: set-metadata
+        config:
+          updates:
+          - kind: Stage
+            name: ${{ ctx.stage }}
+            values:
+              lastPromotedAt: ${{ now() }}
