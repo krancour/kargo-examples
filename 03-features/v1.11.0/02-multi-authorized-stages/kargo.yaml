@@ -1,0 +1,136 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-34
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-34
+  namespace: kargo-demo-34
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: frontend
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: backend
+    autoPromotionEnabled: true
+  # The denied Stage auto-promotes too, so its Promotion errors out on its
+  # own -- that failure is this example's negative test.
+  - stageSelector:
+      name: denied
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-34
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# frontend manages the main nginx image -- authorized via the annotation on
+# the Application (first entry).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: frontend
+  namespace: kargo-demo-34
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-34
+            sources:
+            - repoURL: https://charts.bitnami.com/bitnami
+              chart: nginx
+              helm:
+                images:
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
+---
+# backend manages a DISTINCT artifact within the SAME Application (the
+# metrics sidecar's image tag) -- authorized via the annotation's second
+# entry. The sidecar is disabled in this self-contained demo; what's being
+# validated is that a second Stage's updates to the same Application are
+# authorized and applied.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: backend
+  namespace: kargo-demo-34
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-34
+            sources:
+            - repoURL: https://charts.bitnami.com/bitnami
+              chart: nginx
+              helm:
+                images:
+                - key: metrics.image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}
+---
+# denied is NOT listed in the Application's authorized-stage annotation, so
+# its Promotions must fail with an authorization error.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: denied
+  namespace: kargo-demo-34
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      - uses: argocd-update
+        config:
+          apps:
+          - name: kargo-demo-34
+            sources:
+            - repoURL: https://charts.bitnami.com/bitnami
+              chart: nginx
+              helm:
+                images:
+                - key: image.tag
+                  value: ${{ imageFrom(vars.imageRepo).Tag }}

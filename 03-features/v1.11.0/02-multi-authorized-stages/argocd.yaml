@@ -1,0 +1,34 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-34
+  namespace: argocd
+  annotations:
+    # The novel bit: the authorized-stage annotation now accepts a
+    # comma-separated list of <project>:<stage> entries. Both the frontend
+    # and backend Stages may manage this Application; any other Stage
+    # (see the `denied` Stage in kargo.yaml) is refused.
+    kargo.akuity.io/authorized-stage: kargo-demo-34:frontend,kargo-demo-34:backend
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: nginx
+    targetRevision: 14.1.0
+    helm:
+      parameters:
+      - name: image.registry
+        value: public.ecr.aws
+      - name: image.repository
+        value: nginx/nginx
+      - name: image.tag
+        value: placeholder
+      - name: service.type
+        value: ClusterIP
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-34-app
+  syncPolicy:
+    syncOptions:
+    - CreateNamespace=true

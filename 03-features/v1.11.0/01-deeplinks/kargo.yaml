@@ -1,0 +1,86 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-33
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-33
+  namespace: kargo-demo-33
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+  # The novel bit (1 of 2): project-level deep links, shown in the UI when
+  # viewing this project's Stages and Freight, and served by the
+  # .../stages/<stage>/links and .../freight/<freight>/links API endpoints.
+  #
+  # NOTE the two different languages in play:
+  #   - `url` is a Go template (text/template + sprig) evaluated against a
+  #     context containing the resource: {{ .stage.<field> }} or
+  #     {{ .freight.<field> }} with JSON field names.
+  #   - `if` is an expr-lang condition over the same context (no {{ }}).
+  #
+  # Cluster-level equivalents of these same fields exist on ClusterConfig
+  # and are shown IN ADDITION to project-level links.
+  stageLinks:
+  - title: Grafana dashboard
+    description: Metrics for this Stage's workloads
+    url: https://grafana.example.com/d/kargo?var-project={{ .stage.metadata.namespace }}&var-stage={{ .stage.metadata.name }}
+  - title: Production runbook
+    description: Only shown for Stages labeled tier=prod
+    # Conditional link: hidden until the Stage carries the matching label.
+    # Toggle it on with:
+    #   kubectl -n kargo-demo-33 label stage test tier=prod
+    if: stage.metadata.labels != nil && stage.metadata.labels.tier == "prod"
+    url: https://wiki.example.com/runbooks/{{ .stage.metadata.namespace }}
+  freightLinks:
+  - title: Image in ECR Gallery
+    description: The nginx image this Freight references
+    url: https://gallery.ecr.aws/nginx/nginx?tag={{ (index .freight.images 0).tag }}
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-33
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-33
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      # The novel bit (2 of 2): any promotion step may emit a `links` array
+      # in its output; the UI renders each entry as a clickable link on the
+      # step and on the promotion view. `url` is required; `label`, `icon`,
+      # and `tooltip` are optional. compose-output makes this easy to do
+      # from configuration alone, but "real" steps can do it too.
+      - uses: compose-output
+        as: report
+        config:
+          links:
+          - url: https://gallery.ecr.aws/nginx/nginx?tag=${{ imageFrom("public.ecr.aws/nginx/nginx").Tag }}
+            label: Promoted image
+            tooltip: The exact image version this promotion delivered
+          - url: https://grafana.example.com/d/kargo?var-stage=${{ ctx.stage }}
+            label: Dashboard
