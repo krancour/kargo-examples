@@ -55,7 +55,7 @@ of them through a port-forward:
 
 ```bash
 NS=kargo-demo-32
-SECRET=$(kubectl -n kargo-cluster-secrets get secret github-receiver \
+SECRET=$(kubectl -n kargo-system-resources get secret github-receiver \
   -o jsonpath='{.data.secret}' | base64 -d)
 RPATH=$(kubectl get clusterconfig cluster -o json \
   | jq -r '.status.webhookReceivers[] | select(.name=="github") | .path')

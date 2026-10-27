@@ -61,12 +61,14 @@ kill %1
    kargo_promotions_completed_total{phase="Succeeded",project="kargo-demo-36"} 1
    kargo_promotions_completed_total{phase="Failed",project="kargo-demo-36"} 1
    kargo_promotion_duration_seconds_count{phase="Succeeded",project="kargo-demo-36"} 1
-   kargo_promotions_non_terminal{project="kargo-demo-36"} 0
    kargo_stages_by_ready_reason{project="kargo-demo-36",reason="..."} N
    ```
 
    Exact counts grow with re-runs; the `Failed` sample does not reappear
    because auto-promotion does not retry Freight whose last Promotion failed.
+   `kargo_promotions_non_terminal` has no `kargo-demo-36` series once both
+   Promotions are terminal: it reports only Projects that have a Pending or
+   Running Promotion.
 3. `kargo_stages_by_ready_reason` sums to 2 across reasons for this project
    (one row per readiness reason; `test` and `broken` will usually report
    different reasons).

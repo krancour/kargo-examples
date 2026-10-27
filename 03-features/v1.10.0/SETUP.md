@@ -177,7 +177,7 @@ kubectl get clusterconfig cluster -o yaml \
 …and the shared secret it validates with:
 
 ```bash
-kubectl -n kargo-cluster-secrets get secret github-receiver \
+kubectl -n kargo-system-resources get secret github-receiver \
   -o jsonpath='{.data.secret}' | base64 -d ; echo
 ```
 
