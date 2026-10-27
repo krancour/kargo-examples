@@ -1,0 +1,22 @@
+---
+# No kargo.akuity.io/authorized-stage annotation on purpose: the Stage only
+# waits on this Application, it never mutates it. The chart is public and
+# syncs itself; podinfo needs no configuration to become Healthy.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kargo-demo-39
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://stefanprodan.github.io/podinfo
+    chart: podinfo
+    targetRevision: 6.15.0
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kargo-demo-39-app
+  syncPolicy:
+    automated: {}
+    syncOptions:
+    - CreateNamespace=true

@@ -1,0 +1,119 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-37
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-37
+  namespace: kargo-demo-37
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-37
+spec:
+  subscriptions:
+  - git:
+      repoURL: https://github.com/<github-username>/kargo-demo-gitops.git
+      branch: kustomize
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# Single-stage PR flow: render manifests onto a generated branch, open a PR
+# against the stage branch, merge it, and then have Kargo delete the
+# generated branch it created.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-37
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: gitRepo
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      - name: targetBranch
+        value: 37/stage/${{ ctx.stage }}
+      - name: outPath
+        value: ./out
+      steps:
+      - uses: git-clone
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          author:
+            name: Kargo Demo Bot
+            email: kargo-demo@example.com
+          checkout:
+          - commit: ${{ commitFrom(vars.gitRepo).ID }}
+            path: ./src
+          - branch: ${{ vars.targetBranch }}
+            create: true
+            path: ${{ vars.outPath }}
+      - uses: git-clear
+        config:
+          path: ${{ vars.outPath }}
+      - uses: kustomize-set-image
+        as: update-image
+        config:
+          path: ./src/base
+          images:
+          - image: ${{ vars.imageRepo }}
+            tag: ${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: kustomize-build
+        config:
+          path: ./src/stages/${{ ctx.stage }}
+          outPath: ${{ vars.outPath }}/manifests.yaml
+      - uses: git-commit
+        config:
+          path: ${{ vars.outPath }}
+          message: ${{ outputs['update-image'].commitMessage }}
+      - uses: git-push
+        as: push
+        config:
+          path: ${{ vars.outPath }}
+          generateTargetBranch: true
+      - uses: git-open-pr
+        as: open-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          sourceBranch: ${{ outputs.push.branch }}
+          targetBranch: ${{ vars.targetBranch }}
+          title: Promote ${{ imageFrom(vars.imageRepo).Tag }} to ${{ ctx.stage }}
+      # The novel bit: after a successful merge, delete the PR's source
+      # branch (the generated kargo/promotion/<name> branch). Defaults to
+      # false. A deletion failure is reported in the step's message but does
+      # not fail the step; the merge is the step's job and has already
+      # succeeded by then.
+      - uses: git-merge-pr
+        as: merge-pr
+        config:
+          repoURL: ${{ vars.gitRepo }}
+          prNumber: ${{ outputs['open-pr'].pr.id }}
+          wait: true
+          deleteSourceBranch: true
+      - uses: compose-output
+        as: report
+        config:
+          sourceBranch: ${{ outputs.push.branch }}
+          mergedCommit: ${{ outputs['merge-pr'].commit }}

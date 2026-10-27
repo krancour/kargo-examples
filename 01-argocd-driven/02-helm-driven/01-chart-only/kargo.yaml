@@ -31,7 +31,7 @@ spec:
   - chart:
       repoURL: https://charts.bitnami.com/bitnami
       name: nginx
-      semverConstraint: ^14.1.0
+      semverConstraint: ^25.0.0
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: PromotionTask

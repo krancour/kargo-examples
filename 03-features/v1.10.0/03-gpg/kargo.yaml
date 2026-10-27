@@ -178,6 +178,10 @@ spec:
   - uses: git-clone
     config:
       repoURL: ${{ vars.gitRepo }}
+      author:
+        name: Tony Stark
+        email: tony@starkindustries.com
+        signingKey: ${{ secret('gpg-signing-key').signingKey }}
       checkout:
       - branch: kustomize
         path: ./src
@@ -202,10 +206,6 @@ spec:
     as: commit
     config:
       path: ${{ vars.outPath }}
-      author:
-        name: Tony Stark
-        email: tony@starkindustries.com
-        signingKey: ${{ secret('gpg-signing-key').signingKey }}
       message: ${{ task.outputs['update-image'].commitMessage }}
   - uses: compose-output
     config:
@@ -227,7 +227,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: ${{ secret('manifests').repoURL }}
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
       - name: targetBranch
         value: 17/stage/${{ ctx.stage }}
       - name: outPath
@@ -267,7 +267,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: ${{ secret('manifests').repoURL }}
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
       - name: targetBranch
         value: 17/stage/${{ ctx.stage }}
       - name: outPath
@@ -307,7 +307,7 @@ spec:
     spec:
       vars:
       - name: gitRepo
-        value: ${{ secret('manifests').repoURL }}
+        value: https://github.com/<github-username>/kargo-demo-gitops.git
       - name: targetBranch
         value: 17/stage/${{ ctx.stage }}
       - name: outPath
@@ -324,7 +324,6 @@ spec:
         as: open-pr
         config:
           repoURL: ${{ vars.gitRepo }}
-          createTargetBranch: true
           sourceBranch: ${{ outputs.push.branch }}
           targetBranch: ${{ vars.targetBranch }}
       - uses: git-wait-for-pr

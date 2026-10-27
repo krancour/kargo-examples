@@ -25,137 +25,119 @@ they always trigger refresh.
 
 ## Prerequisites
 
-- A running Kargo control plane with the external webhooks server reachable
-  from GitHub (Tilt: `make hack-tilt-up` exposes it on
-  `localhost:30083`; for GitHub to reach it from the public internet you
-  need an ingress, an ngrok tunnel, or a similar relay).
+- A running Kargo control plane with the external webhooks server
+  (`kargo-external-webhooks-server` in the `kargo` namespace).
 - The cluster-level GitHub webhook receiver from `00-common/kargo.yaml`
-  applied (it ships with a `github-receiver` Secret and the
+  applied (it ships a `github-receiver` Secret and the
   `webhookReceivers[].github` block on ClusterConfig).
-- A fork of [krancour/kargo-demo-gitops](https://github.com/krancour/kargo-demo-gitops).
-- **A `manifests` branch on your fork** containing a `manifests/`
-  directory with at least one file. Suggested seed:
-  ```bash
-  git clone https://github.com/<github-username>/kargo-demo-gitops.git
-  cd kargo-demo-gitops
-  git checkout --orphan manifests
-  git rm -rf .
-  mkdir -p manifests
-  echo 'apiVersion: v1' > manifests/configmap.yaml
-  echo 'kind: ConfigMap' >> manifests/configmap.yaml
-  echo 'metadata:' >> manifests/configmap.yaml
-  echo '  name: demo-config' >> manifests/configmap.yaml
-  echo 'data:' >> manifests/configmap.yaml
-  echo '  greeting: hello' >> manifests/configmap.yaml
-  echo '# Initial commit on the manifests branch.' > README.md
-  git add manifests README.md
-  git commit -m "Seed manifests branch for kargo-demo-32"
-  git push origin manifests
-  ```
-- An ngrok (or equivalent) tunnel forwarding to `localhost:30083` so
-  GitHub can deliver webhooks. Note the public URL.
-
-## Setup
-
-```bash
-make hack-tilt-up                      # if not already running
-kubectl apply -f 00-common/kargo.yaml  # once per cluster
-```
+- A fork of [krancour/kargo-demo-gitops](https://github.com/krancour/kargo-demo-gitops)
+  with a `manifests` branch containing a `manifests/` directory (the
+  Warehouse subscribes to it; the seed recipe is in the appendix).
+- `curl`, `jq`, `openssl`. **No tunnel and no webhook on the fork**: the
+  test plays GitHub itself.
 
 ## Apply
 
 ```bash
-kubectl apply -f 03-features/18-webhook-path-filtering/kargo.yaml
+kubectl apply -f 00-common/kargo.yaml   # once per cluster
+sed "s|<github-username>|$GH_USER|g" \
+  03-features/v1.10.0/18-webhook-path-filtering/kargo.yaml | kubectl apply -f -
 ```
 
-Get the receiver's URL path:
+## Trigger
+
+The receiver decides purely from the push payload: it matches the
+Warehouse by `repository.clone_url`, the branch by `ref`, and the paths
+by the union of `commits[].added/modified/removed` and `head_commit`'s
+lists. So a hand-built push event, signed with the receiver's shared
+secret exactly as GitHub signs, exercises the whole decision. Deliver four
+of them through a port-forward:
 
 ```bash
-kubectl get clusterconfig cluster -o yaml \
-  | yq '.status.webhookReceivers[] | select(.name=="github") | .path'
+NS=kargo-demo-32
+SECRET=$(kubectl -n kargo-cluster-secrets get secret github-receiver \
+  -o jsonpath='{.data.secret}' | base64 -d)
+RPATH=$(kubectl get clusterconfig cluster -o json \
+  | jq -r '.status.webhookReceivers[] | select(.name=="github") | .path')
+kubectl -n kargo port-forward svc/kargo-external-webhooks-server 18443:443 &
+sleep 2
+
+payload() {  # payload <ref> <changed-file>
+  jq -nc --arg ref "$1" --arg f "$2" --arg u "$GH_USER" '{
+    ref: $ref,
+    repository: {clone_url: ("https://github.com/" + $u + "/kargo-demo-gitops.git"),
+                 html_url: ("https://github.com/" + $u + "/kargo-demo-gitops")},
+    commits: [{id: "0000000000000000000000000000000000000002", added: [], modified: [$f], removed: []}],
+    head_commit: {id: "0000000000000000000000000000000000000002", added: [], modified: [$f], removed: []}}'
+}
+deliver() {  # deliver <label> <ref> <changed-file> [bad]
+  local body sig before after
+  body=$(payload "$2" "$3")
+  sig=$(printf '%s' "$body" | openssl dgst -sha256 -hmac "$SECRET" | awk '{print $NF}')
+  [ "$4" = bad ] && sig=deadbeef
+  before=$(kubectl -n $NS get warehouse kargo-demo -o jsonpath='{.metadata.annotations.kargo\.akuity\.io/refresh}')
+  echo "== $1"
+  curl -sk -w ' HTTP %{http_code}\n' -X POST "https://localhost:18443$RPATH" \
+    -H 'Content-Type: application/json' -H 'X-GitHub-Event: push' \
+    -H "X-Hub-Signature-256: sha256=$sig" --data "$body"
+  sleep 2
+  after=$(kubectl -n $NS get warehouse kargo-demo -o jsonpath='{.metadata.annotations.kargo\.akuity\.io/refresh}')
+  echo "   refresh annotation: ${before:-<none>} -> ${after:-<none>}"
+}
+
+deliver "manifests/ touched on manifests branch" refs/heads/manifests manifests/configmap.yaml
+deliver "README only on manifests branch"        refs/heads/manifests README.md
+deliver "manifests/ touched on another branch"   refs/heads/main      manifests/configmap.yaml
+deliver "bad signature"                          refs/heads/manifests manifests/configmap.yaml bad
+kill %1; unset SECRET
 ```
 
-…and the secret it expects:
+## Expected outcome
 
-```bash
-kubectl -n kargo-cluster-secrets get secret github-receiver \
-  -o jsonpath='{.data.secret}' | base64 -d ; echo
-```
+| Delivery | Response | `kargo.akuity.io/refresh` on the Warehouse |
+|---|---|---|
+| `manifests/` touched, `manifests` branch | `200 {"msg":"refreshed 1 warehouse(s)"}` | set / changed |
+| README only, `manifests` branch | `200 {"msg":"refreshed 0 warehouse(s)"}` | unchanged |
+| `manifests/` touched, other branch | `200 {"msg":"refreshed 0 warehouse(s)"}` | unchanged |
+| bad signature | `401 {"error":"unauthorized"}` | unchanged |
 
-Configure your fork's webhook (Settings → Webhooks → Add webhook):
-
-- **Payload URL**: `https://<your-tunnel-host><path-from-above>`
-- **Content type**: `application/json`
-- **Secret**: the value printed above
-- **Events**: just the push event
-- **Active**: ✓
-
-## Trigger / Validate
-
-Make TWO commits on the `manifests` branch and watch which one refreshes
-the Warehouse.
-
-### Negative case — no refresh expected
-
-```bash
-cd kargo-demo-gitops
-git checkout manifests
-echo "edit at $(date)" >> README.md
-git add README.md
-git commit -m "Touch only README"
-git push origin manifests
-```
-
-Watch:
-
-```bash
-kubectl -n kargo-demo-32 get warehouse kargo-demo -o yaml \
-  | yq '.status.lastHandledRefresh,.status.discoveredArtifacts.git[0].commits[0].id'
-```
-
-`lastHandledRefresh` should NOT change. The Warehouse should not have
-re-run discovery.
-
-### Positive case — refresh expected
-
-```bash
-echo "data: $(date)" >> manifests/configmap.yaml
-git add manifests/configmap.yaml
-git commit -m "Update manifests/configmap.yaml"
-git push origin manifests
-```
-
-Within seconds:
-
-```bash
-kubectl -n kargo-demo-32 get warehouse kargo-demo -o yaml \
-  | yq '.status.lastHandledRefresh,.status.discoveredArtifacts.git[0].commits[0].id'
-```
-
-`lastHandledRefresh` updates, the latest discovered commit ID is the new
-one, and a new Freight resource appears.
-
-## Expected outcome (summary)
-
-| Push touched | Webhook delivered? | Warehouse refreshed? |
-|--------------|--------------------|----------------------|
-| Only `README.md` | Yes (GitHub still delivers) | **No** — filtered by `includePaths` |
-| `manifests/configmap.yaml` | Yes | **Yes** |
-| Both files | Yes | **Yes** (any matching path is enough) |
+Row 2 is the feature: before #5611 that delivery refreshed the Warehouse
+too. Row 3 is the pre-existing branch match, row 4 the signature check.
+The refreshed Warehouse then runs a discovery pass, so after row 1 its
+`status.discoveredArtifacts.git[0].commits` is fresh and any new commit
+under `manifests/` turns into Freight.
 
 ## Troubleshooting
 
-- **Webhook not delivered at all** — check the GitHub Webhooks UI for
-  delivery errors. 401 → secret mismatch. Connection refused → tunnel
-  down. 404 → wrong receiver path.
-- **Webhook delivered but warehouse doesn't refresh on a manifests push**
-  — confirm the push payload's `commits[].modified/added/removed` lists
-  include a path matching `manifests/**`. GitHub elides these lists for
-  pushes with > 3000 file changes; in that case Kargo falls back to
-  refreshing.
-- **Warehouse refreshes even on README-only pushes** — the path
-  filter only applies to providers whose payloads include file lists.
-  If your webhook URL is the `generic` receiver instead of `github`,
-  no filtering happens. Confirm via the `clusterconfig` status path.
-- **Refresh fires twice** — sometimes the initial Stage reconcile and
-  the webhook arrive close together; benign.
+- **Row 1 says `refreshed 0 warehouse(s)`** — the payload's `clone_url`
+  doesn't normalize to the Warehouse's `repoURL` (check `$GH_USER` and the
+  fork name), or `ref` isn't `refs/heads/manifests`.
+- **Every delivery is 401** — the secret came from the wrong namespace or
+  the body was altered after signing; sign exactly the bytes you send.
+- **Row 2 also refreshes** — you're on a Kargo older than 1.10, or the
+  Warehouse lost its `includePaths`.
+- **Connection refused** — the port-forward died; the external webhooks
+  server listens on 443 (TLS) in the Service, hence `curl -k`.
+
+## Appendix — the real-GitHub route
+
+Only needed if you want GitHub itself to send the events. Expose the
+external webhooks server publicly (for example `ngrok http 18443` on top
+of the port-forward above), then on the fork add a webhook with payload
+URL `https://<tunnel-host>$RPATH`, content type `application/json`, the
+`github-receiver` secret, push events only. Push two commits to the
+`manifests` branch, one under `manifests/` and one outside it, and read
+the same annotation. The `manifests` branch seed, if your fork lacks it:
+
+```bash
+git clone https://github.com/<github-username>/kargo-demo-gitops.git
+cd kargo-demo-gitops
+git checkout --orphan manifests
+git rm -rf .
+mkdir -p manifests
+printf 'apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: demo-config\ndata:\n  greeting: hello\n' > manifests/configmap.yaml
+echo '# Initial commit on the manifests branch.' > README.md
+git add manifests README.md
+git commit -m "Seed manifests branch for kargo-demo-32"
+git push origin manifests
+```

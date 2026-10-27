@@ -25,4 +25,6 @@ spec:
       destination:
         server: https://kubernetes.default.svc
         namespace: kargo-demo-19-{{stage}}
-      syncPolicy: {}
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true

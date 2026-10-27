@@ -1,0 +1,236 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-38
+---
+# ---------------------------------------------------------------------------
+# In-namespace targets so that nothing outside the cluster is needed:
+#   - an OCI registry, served over TLS with a cert-manager self-signed cert
+#     (oci-push speaks HTTPS; the step's insecureSkipTLSVerify accepts it)
+#   - an HTTP echo server that returns the request it received as JSON
+# ---------------------------------------------------------------------------
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+  namespace: kargo-demo-38
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: registry-tls
+  namespace: kargo-demo-38
+spec:
+  secretName: registry-tls
+  issuerRef:
+    name: selfsigned
+    kind: Issuer
+  dnsNames:
+  - registry
+  - registry.kargo-demo-38.svc
+  - registry.kargo-demo-38.svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: kargo-demo-38
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: public.ecr.aws/docker/library/registry:3.1.2
+        env:
+        - name: REGISTRY_HTTP_ADDR
+          value: :5000
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: /certs/tls.crt
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: /certs/tls.key
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: certs
+          mountPath: /certs
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: registry-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: kargo-demo-38
+spec:
+  selector:
+    app: registry
+  ports:
+  - port: 5000
+    targetPort: 5000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: echo
+  namespace: kargo-demo-38
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: echo
+  template:
+    metadata:
+      labels:
+        app: echo
+    spec:
+      containers:
+      - name: echo
+        image: mendhak/http-https-echo:42
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: echo
+  namespace: kargo-demo-38
+spec:
+  selector:
+    app: echo
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-38
+  namespace: kargo-demo-38
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-38
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-38
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: registry
+        value: registry.kargo-demo-38.svc.cluster.local:5000
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      # Render something worth packaging: two files under ./manifests.
+      - uses: file-write
+        config:
+          path: ./manifests/deployment.yaml
+          contents: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: nginx
+            spec:
+              template:
+                spec:
+                  containers:
+                  - name: nginx
+                    image: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: file-write
+        config:
+          path: ./manifests/PROVENANCE.txt
+          contents: |
+            promotion: ${{ ctx.promotion }}
+            stage: ${{ ctx.stage }}
+      # A JSON-shaped string is parsed into an object after expression
+      # evaluation, and file-write wants a string, so build it with quote().
+      - uses: file-write
+        config:
+          path: ./payload.json
+          contents: |
+            ${{ quote({"promotion": ctx.promotion, "stage": ctx.stage}) }}
+      # Novel bit 1 of 3 (#6666): the `tar` step archives a file or
+      # directory from the workspace. gzip is off unless asked for.
+      - uses: tar
+        as: archive
+        config:
+          inPath: ./manifests
+          outPath: ./manifests.tar.gz
+          gzip: true
+      # Novel bit 2 of 3 (#6753): `http` can take its request body from a
+      # file in the workspace instead of an inline `body`. Setting both is
+      # rejected. The echo server hands the request back as JSON, so the
+      # body we sent is asserted on in successExpression.
+      - uses: http
+        as: upload
+        config:
+          method: POST
+          url: http://echo.kargo-demo-38.svc.cluster.local:8080/upload
+          headers:
+          - name: Content-Type
+            value: application/json
+          bodyFromFile: ./payload.json
+          successExpression: response.status == 200 && response.body.json.promotion == "${{ ctx.promotion }}"
+          outputs:
+          - name: echoedPromotion
+            fromExpression: response.body.json.promotion
+          - name: echoedStage
+            fromExpression: response.body.json.stage
+      # Novel bit 3 of 3 (#6893): `oci-push` with srcPath pushes a local
+      # file as a single-layer OCI 1.1 artifact: top-level artifactType,
+      # empty-descriptor config, our mediaType on the layer, and the
+      # annotations recorded on the manifest.
+      - uses: oci-push
+        as: push
+        config:
+          srcPath: ./manifests.tar.gz
+          destRef: ${{ vars.registry }}/config/app:${{ ctx.promotion }}
+          artifactType: application/vnd.kargo-demo.config.v1
+          mediaType: application/vnd.kargo-demo.config.layer.v1.tar+gzip
+          insecureSkipTLSVerify: true
+          annotations:
+            org.opencontainers.image.source: https://github.com/akuity/kargo-examples
+            io.kargo.promotion: ${{ ctx.promotion }}
+      - uses: compose-output
+        as: report
+        config:
+          artifact: ${{ vars.registry }}/config/app:${{ ctx.promotion }}
+          digest: ${{ outputs.push.digest }}
+          echoedPromotion: ${{ outputs.upload.echoedPromotion }}

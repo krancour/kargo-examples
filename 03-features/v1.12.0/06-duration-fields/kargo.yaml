@@ -1,0 +1,68 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-40
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-40
+spec:
+  # Duration written in shorthand. Before #7150 the mutating webhook
+  # round-tripped this through metav1.Duration and stored "5m0s".
+  interval: 5m
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-40
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: compose-output
+        as: report
+        config:
+          note: nothing to do
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: uat
+  namespace: kargo-demo-40
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      stages:
+      - test
+      # The novel bit: these two durations must be stored exactly as written
+      # ("2h" and "1h"), not rewritten to "2h0m0s" and "1h0m0s" by the
+      # Stage's mutating admission webhook, on create or on any later update.
+      requiredSoakTime: 2h
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: compose-output
+        as: report
+        retry:
+          timeout: 1h
+        config:
+          note: nothing to do

@@ -105,7 +105,6 @@ spec:
     if: ${{ vars.usePR }}
     config:
       repoURL: ${{ vars.gitRepo }}
-      createTargetBranch: true
       sourceBranch: ${{ task.outputs.push.branch }}
       targetBranch: ${{ vars.targetBranch }}
   - uses: git-merge-pr

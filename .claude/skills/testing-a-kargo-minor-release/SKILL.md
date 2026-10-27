@@ -27,6 +27,12 @@ Facts that hold throughout:
 - **`<github-username>` placeholders** are substituted in a pipe at apply
   time, never edited in place:
   `sed "s|<github-username>|$GH_USER|g" f.yaml | kubectl apply -f -`.
+  Every example names the fork `kargo-demo-gitops`. When the user's fork is
+  named differently, map the repo in the same pipe, first:
+  `sed -e "s|<github-username>/kargo-demo-gitops.git|$GH_USER/<fork>.git|g" -e "s|<github-username>|$GH_USER|g"`.
+- **Status messages state only what a tool result showed.** A command that
+  was rejected or timed out is reported as exactly that. Never imply a PR,
+  Promotion, or namespace exists because the plan expected one.
 - **The user runs commit and push.** Hand over commands: staging and commit
   in one paste, message from a quoted heredoc, `-s` for sign-off. Follow the
   shipping-a-change skill if it's available.
@@ -54,16 +60,18 @@ Open every run by stating the phase you're starting at and why.
 
 1. Version under test, `v1.N`.
 2. `GH_USER`: the GitHub account holding the user's fork of
-   `kargo-demo-gitops`. Used for every placeholder substitution.
+   `kargo-demo-gitops`, and the fork's name if it isn't `kargo-demo-gitops`.
+   Used for every placeholder substitution.
 3. Install path, asked once with a single question:
    - **a. User installs.** They bring up Tilt or helm install a build
      themselves. Phase 3 waits for their go.
    - **b. Skill installs.** Helm install a published chart. Need a chart
      version; with no GA tag yet, use the newest `v1.N.0-rc.*` from
      `git tag --sort=-v:refname` in the kargo clone. Mirror the kargo
-     repo's `hack-install-cert-manager` and `hack-install-argocd` Makefile
-     targets and `hack/tilt/values.dev.yaml` for cert-manager, Argo CD
-     (admin/admin, NodePort 30080) and the Kargo values (API on NodePort
+     repo's `hack-install-cert-manager`, `hack-install-argocd` and
+     `hack-install-argo-rollouts` Makefile targets and
+     `hack/tilt/values.dev.yaml` for cert-manager, Argo CD (admin/admin,
+     NodePort 30080), Argo Rollouts and the Kargo values (API on NodePort
      30081, TLS off, admin/admin). Leave out Dex and the chart-level signing
      key; `00-common` supplies the git identity.
 4. Cluster check. Also confirm the cluster is fresh or at least free of
@@ -105,7 +113,9 @@ order the user pruned. Match the existing shape exactly:
 - `SETUP.md` for the version, covering only shared plumbing.
 
 Prefer zero-fork designs (public images, public charts, in-namespace echo
-servers) so the example needs nothing from `00-common`. Add a negative case
+servers) so the example needs nothing from `00-common`. Don't hardcode the
+"newest" tag of a public image in a README or a check (`1.29.x`): it moves.
+Say "the newest tag" and select Freight by origin and creation time. Add a negative case
 when it's cheap, like the `denied` Stage in v1.11's example 02.
 
 Use the writing-yaml skill if it's available. Verify with `yq -e '.'` on
@@ -134,26 +144,50 @@ Per example:
 1. Read its README, or the manifest comments when there is none, for
    Trigger and Expected outcome.
 2. Apply `argocd.yaml` then `kargo.yaml`, through the placeholder pipe.
-3. Trigger as the README says; usually a Warehouse refresh annotation.
-4. Poll Promotions and Applications in a loop with a timeout, ten minutes
-   by default. Never a bare `kubectl get -w`.
+3. Read the example's own `ProjectConfig` for which Stages auto-promote.
+   Never carry the answer over from the previous example: in the base
+   examples `test` and `uat` usually do and `prod` usually doesn't, and the
+   selector may be a regex. Trigger as the README says; usually a Warehouse
+   refresh annotation. A Stage without auto-promotion gets a Promotion
+   created by hand from its upstream Stage's current Freight, after that
+   Stage is Verified. Don't hand-promote a Stage that auto-promotes; it
+   only makes duplicate Promotions.
+4. Poll Promotions and Applications in a loop, ten seconds apart, and keep
+   any single poll under five minutes; post a one-line status to the user
+   between polls. Never a bare `kubectl get -w`. Soak times in the base
+   examples are 10m: patch them to 1m on the live Stages for the run
+   (`requiredSoakTime`) and say so in the results row; nobody is waiting
+   ten minutes per stage to prove a soak. A `prod` that uses
+   `git-wait-for-pr` blocks until a human merges the PR on the fork: ask
+   the user once whether the skill may merge; on a yes, `gh pr merge
+   --merge` the open PR against `NN/stage/prod`, and only after a tool
+   result shows that PR exists.
 5. Run the README's specific checks and keep the output as evidence.
 6. Classify: ✅ matched expected outcome; ❌ did not; ⚠️ not run, with the
    reason.
 
-⚠️ is for what the skill can't do alone: a public webhook tunnel, a chart
-reinstall for a policy toggle, a UI-only check, an EE-only feature. The user
-can opt any of these in.
+⚠️ is for what the skill can't do alone: a chart reinstall for a policy
+toggle, a UI-only check, an EE-only feature. The user can opt any of these
+in. A webhook receiver is not on that list: play the provider. Build the
+push payload the receiver parses, sign it with the receiver Secret
+(`X-Hub-Signature-256` for GitHub), and POST it through a port-forward to
+`kargo-external-webhooks-server`; the 200 body says how many Warehouses
+were refreshed. No tunnel, no webhook on the fork.
 
 An example bug (stale path, removed field, wrong namespace) gets fixed and
 the example rerun, and the fix is noted in results. A suspected Kargo bug is
 recorded with expected vs observed and a controller log excerpt. Nothing is
 patched in kargo and nothing is filed.
 
-After each batch: delete the batch's Argo CD Applications, delete its
-Projects, then delete every `kargo-demo-*` namespace that still exists and
-`kubectl wait --for=delete` on each. Confirm no Terminating pods remain,
-then start the next batch. Leftover `kargo-demo-*` namespaces found at the
+After each batch: delete the batch's Argo CD ApplicationSets and
+Applications **by name** (`kubectl -n argocd get applicationsets,applications
+-o name | grep kargo-demo-`), never `--all`; delete its Projects; then delete
+every `kargo-demo-*` namespace that still exists, including the Argo CD
+destination namespaces (`kargo-demo-NN-<stage>`), and `kubectl wait
+--for=delete` on each. Confirm no Terminating pods remain, then start the
+next batch. The same applies to a single example's rerun: re-applying while
+its destination namespace is still Terminating makes the sync fail with
+`unable to create new content in namespace`. Leftover `kargo-demo-*` namespaces found at the
 start of a run are deleted the same way, without asking. Append the batch's
 rows to `TEST-RESULTS-v1.N.md` before moving on, so an interruption loses
 nothing.
@@ -168,7 +202,14 @@ attempts at a fix come before any question to them.
 | Leftover or stuck-terminating `kargo-demo-*` namespaces: delete, clear finalizers | Wrong cluster context |
 | Kargo or Argo CD pods not ready yet: wait, then check logs | A credential, token, or external account only the user holds |
 | Image pull backoff on a public image: retry, check the tag exists | The Kargo build itself looks broken (crashlooping controller, CRDs missing after install) |
-| Promotion never starts: refresh the Warehouse again, check the Stage's `requestedFreight` | Two fix attempts failed |
+| Promotion never starts: refresh the Warehouse again, check the Stage's `requestedFreight`; if the Stage doesn't auto-promote, promote by hand | Two fix attempts failed |
+| PR-path Promotion Errored on `task.outputs['open-pr'].pr.id` with `commit` and `open-pr` Skipped: the fork's `NN/stage/<stage>` branch already holds this content from an earlier run, so there was no diff and no PR. Delete that branch on the fork (`gh api -X DELETE repos/$GH_USER/<fork>/git/refs/heads/NN/stage/<stage>`) and re-promote | |
+| Application Degraded with ImagePullBackOff on a `bitnami/*` image: Docker Hub dropped Bitnami's versioned tags and kept only `latest`. Raise the Warehouse's chart `semverConstraint` to versions that reference `latest` (nginx ≥ 22.0.7); don't override the image to `bitnamilegacy/*` | |
+| Sync fails with `namespaces "kargo-demo-NN-<stage>" not found`: the Application's `syncPolicy` lacks `syncOptions: [CreateNamespace=true]`. Add it to `argocd.yaml` | |
+| Project apply refused with "namespace already exists and is not labeled as a Project namespace": a pre-created Namespace needs the label `kargo.akuity.io/project: "true"` | |
+| A step config with a JSON-shaped string (`{"a": "..."}`) fails with `Expected: string, given: object`: expression evaluation parses it. Build it with `${{ quote({...}) }}` inside a block scalar | |
+| An example's URL placeholder like `http://<host IP>:8080` wants a listener on the host: run one (Python `http.server`) and point the live PromotionTask at `host.internal`, OrbStack's host address | |
+| `stageMetadata()` reads nil right after `set-metadata`, or `status.metadata` is missing after a Stage's first Promotion: known suspect (v1.12 run), record it, re-promote | |
 | Step timeout that a second attempt clears | A ⚠️ opt-in they haven't given |
 | Anything in the example README's Troubleshooting section | |
 
@@ -212,4 +253,15 @@ file.
 | Running against kind, docker-desktop, or a remote cluster | OrbStack only. Hard stop. |
 | Re-deriving the feature list or rewriting examples on a resume | Reuse what earlier phases left behind. |
 | Asking about leftover namespaces, unready pods, or a flaky step | Troubleshoot first. Two attempts before a question. |
+| Assuming a Stage auto-promotes because the previous example's did | Read each example's `ProjectConfig`. `prod` is usually manual. |
+| Hand-promoting a Stage that already auto-promotes | Duplicate Promotions. Check the policy first. |
+| Reporting a PR, Promotion, or namespace that no tool result showed | Say what was observed. A rejected or timed-out command is reported as such. |
+| `kubectl delete applications --all` in `argocd` | Delete by `kargo-demo-` name only. |
+| Re-applying an example while its `kargo-demo-NN-<stage>` namespace is Terminating | Wait for delete on every `kargo-demo-*` namespace, destinations included. |
+| Merging a PR on the user's fork without being told to | Ask once. `gh pr merge` only after a tool result shows the PR. |
+| Marking a webhook example ⚠️ for want of a tunnel | Sign a synthetic payload and deliver it yourself. |
+| Polls that run ten minutes with no word to the user | Under five minutes per poll, a status line between polls. |
+| Leaving a 10m soak in place and waiting it out | Patch to 1m on the live Stage and note it. |
+| Hardcoding the "newest" tag (`1.29.x`) in a new README | It moves. Select by origin and creation time. |
+| A push-integration test that pushes its divergent commit before the next Promotion clones | Nothing diverges at push time. Manufacture the divergence inside the Promotion: a second clone commits and pushes first. |
 | Bare `git commit -s` or an interactive commit | Heredoc command, explicit paths, `-s`. |

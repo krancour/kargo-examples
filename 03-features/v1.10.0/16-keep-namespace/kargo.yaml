@@ -11,6 +11,9 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: kargo-demo-30
+  labels:
+    # Kargo adopts a pre-existing namespace only when it carries this label.
+    kargo.akuity.io/project: "true"
   annotations:
     kargo.akuity.io/keep-namespace: "true"
 ---

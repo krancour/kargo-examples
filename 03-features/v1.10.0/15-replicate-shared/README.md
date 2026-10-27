@@ -80,10 +80,10 @@ kubectl -n kargo-demo-29 annotate warehouse kargo-demo \
 3. Inspect the Stage:
    ```bash
    kubectl -n kargo-demo-29 get stage test -o yaml \
-     | yq '.metadata.annotations'
+     | yq '.status.metadata'
    ```
    The `set-metadata` step writes the Secret's contents into the Stage's
-   metadata block, so you'll see `greeting: "Hello from the shared
+   `status.metadata`, so you'll see `greeting: "Hello from the shared
    config secret!"` and the `apiBaseURL`.
 4. Edit the source Secret's `greeting` value and re-apply →
    the replica updates within a reconcile cycle.

@@ -54,8 +54,9 @@ kubectl -n kargo-demo-30 get configmap my-other-app-config
 
 - The Namespace `kargo-demo-30` still exists.
 - The unrelated ConfigMap `my-other-app-config` still exists.
-- The Kargo CRDs (Warehouse, Stage, etc.) have been removed by Project
-  deletion's normal cascade.
+- The Warehouse and Stage are still there too. Kargo only ever removed them
+  by deleting the namespace; with the namespace kept, nothing deletes them,
+  and they stay valid when the Project is re-created below.
 
 You can re-create the Project in the same namespace if desired:
 

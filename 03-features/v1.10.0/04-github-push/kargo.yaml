@@ -2,13 +2,13 @@
 apiVersion: kargo.akuity.io/v1alpha1
 kind: Project
 metadata:
-  name: signing-keys-demo
+  name: kargo-demo-18
 ---
 apiVersion: kargo.akuity.io/v1alpha1
 kind: ProjectConfig
 metadata:
-  name: signing-keys-demo
-  namespace: signing-keys-demo
+  name: kargo-demo-18
+  namespace: kargo-demo-18
 spec:
   promotionPolicies:
   - stageSelector:
@@ -19,7 +19,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Warehouse
 metadata:
   name: kargo-demo
-  namespace: signing-keys-demo
+  namespace: kargo-demo-18
 spec:
   subscriptions:
   - git:
@@ -35,7 +35,7 @@ apiVersion: kargo.akuity.io/v1alpha1
 kind: Stage
 metadata:
   name: test
-  namespace: signing-keys-demo
+  namespace: kargo-demo-18
 spec:
   requestedFreight:
   - origin:
@@ -51,7 +51,7 @@ spec:
       - name: imageRepo
         value: public.ecr.aws/nginx/nginx
       - name: targetBranch
-        value: signing-keys-demo-7/stage/${{ ctx.stage }}
+        value: 18/stage/${{ ctx.stage }}
       - name: outPath
         value: ./out
       steps:
@@ -68,13 +68,12 @@ spec:
         config:
           path: ${{ vars.outPath }}
       - uses: kustomize-set-image
+        as: update-image
         config:
           path: ./src/base
           images:
           - image: ${{ vars.imageRepo }}
             tag: ${{ imageFrom(vars.imageRepo).Tag }}
-      # --- foo test: 20 signed commits against the same worktree's .gnupg --
-      # Commit 1 (build)
       - uses: kustomize-build
         config:
           path: ./src/stages/${{ ctx.stage }}
@@ -82,86 +81,18 @@ spec:
       - uses: git-commit
         config:
           path: ${{ vars.outPath }}
-          message: foo commit 1 (build)
-      # Commit 2 (clear)
-      - uses: git-clear
-        config:
-          path: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 2 (clear)
-      # Commit 3 (build)
-      - uses: kustomize-build
-        config:
-          path: ./src/stages/${{ ctx.stage }}
-          outPath: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 3 (build)
-      # Commit 4 (clear)
-      - uses: git-clear
-        config:
-          path: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 4 (clear)
-      # Commit 5 (build)
-      - uses: kustomize-build
-        config:
-          path: ./src/stages/${{ ctx.stage }}
-          outPath: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 5 (build)
-      # Commit 6 (clear)
-      - uses: git-clear
-        config:
-          path: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 6 (clear)
-      # Commit 7 (build)
-      - uses: kustomize-build
-        config:
-          path: ./src/stages/${{ ctx.stage }}
-          outPath: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 7 (build)
-      # Commit 8 (clear)
-      - uses: git-clear
-        config:
-          path: ${{ vars.outPath }}
-      - uses: git-commit
-        config:
-          path: ${{ vars.outPath }}
-          message: foo commit 8 (clear)
-      # # Commit 9 (build)
-      # - uses: kustomize-build
-      #   config:
-      #     path: ./src/stages/${{ ctx.stage }}
-      #     outPath: ${{ vars.outPath }}
-      # - uses: git-commit
-      #   config:
-      #     path: ${{ vars.outPath }}
-      #     message: foo commit 9 (build)
-      # NB: github-push intentionally commented out to avoid pushing 60 foo
-      # commits to the remote each time this is exercised. Re-enable if you
-      # want to verify the end-to-end path.
+          message: ${{ outputs['update-image'].commitMessage }}
+      # The novel bit: push through the GitHub REST API as the configured
+      # GitHub App instead of over HTTPS. GitHub signs the resulting commits
+      # server-side, so they show a Verified badge without any GPG setup.
       - uses: github-push
         as: push
         config:
           path: ${{ vars.outPath }}
-      # - uses: argocd-update
-      #   config:
-      #     apps:
-      #     - name: ${{ ctx.project }}-${{ ctx.stage }}
-      #       sources:
-      #       - repoURL: ${{ vars.gitRepo }}
-      #         desiredRevision: ${{ outputs.push.commit }}
+      - uses: argocd-update
+        config:
+          apps:
+          - name: ${{ ctx.project }}-${{ ctx.stage }}
+            sources:
+            - repoURL: ${{ vars.gitRepo }}
+              desiredRevision: ${{ outputs.push.commit }}

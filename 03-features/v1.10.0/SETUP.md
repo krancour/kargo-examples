@@ -138,10 +138,6 @@ git commit -m "Seed manifests branch for kargo-demo-32"
 git push -u origin manifests
 ```
 
-Keep `/tmp/kargo-demo-gitops` around — example 17's `validate.sh`
-expects a local clone at `./kargo-demo-gitops` by default, so symlink or
-re-clone there if you want to run 17.
-
 ## Step 7 — Substitute `<github-username>` in the feature manifests
 
 Every example under `04-*` through `18-*` that references your fork has
@@ -192,29 +188,13 @@ Configure a webhook on your fork (Settings → Webhooks → Add):
 - **Secret**: the base64-decoded value above
 - **Events**: Just the push event
 
-## Step 9 — (Only needed for 17) Policy toggle + helper
+## Step 9 — (Only needed for 17) Nothing to toggle any more
 
-Example 17 validates the four `pushIntegrationPolicy` values. For each
-value you want to exercise, re-install the chart:
-
-```bash
-# From the kargo repo root:
-helm upgrade kargo charts/kargo \
-  -n kargo --reuse-values \
-  --set controller.gitClient.pushIntegrationPolicy=RebaseOrMerge
-kubectl -n kargo rollout status deploy/kargo-controller
-```
-
-Then run the helper script from the example directory:
-
-```bash
-cd kargo-examples/03-features/17-push-integration-policy
-REPO=/tmp/kargo-demo-gitops ./validate.sh "${GH_USER}" test
-```
-
-Repeat for `AlwaysRebase`, `RebaseOrMerge`, `RebaseOrFail`, `AlwaysMerge`;
-compare the final Promotion's `.status.phase` to the matrix in that
-example's README.
+Example 17 used to need one chart re-install per `pushIntegrationPolicy`
+value plus a helper script. It now exercises both outcomes of the default
+`RebaseOrMerge` policy (rebase and merge) from inside its two Stages'
+promotion processes, with nothing beyond the `00-common` identity. Just
+apply it and read its README.
 
 ---
 

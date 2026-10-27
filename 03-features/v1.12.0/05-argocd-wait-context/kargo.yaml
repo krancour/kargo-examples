@@ -1,0 +1,60 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-39
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-39
+  namespace: kargo-demo-39
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-39
+spec:
+  subscriptions:
+  - image:
+      repoURL: ghcr.io/stefanprodan/podinfo
+      constraint: ^6.0.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# The novel bit: this Stage's only step is argocd-wait. There is no
+# argocd-update, so no health check is registered for the Application.
+# Before #6766 the kargo.akuity.io/argocd-context annotation, which the UI
+# turns into deep links to Argo CD, was derived from those health checks
+# alone, and a Stage like this one got none. Now argocd-wait reports the
+# Applications it resolved under an `apps` output key and the annotation is
+# built from that.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-39
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: argocd-wait
+        as: wait
+        config:
+          apps:
+          - name: kargo-demo-39
+            waitFor:
+            - health
+            - sync

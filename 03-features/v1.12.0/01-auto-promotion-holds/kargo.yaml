@@ -1,0 +1,75 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-35
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-35
+  namespace: kargo-demo-35
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: test
+    autoPromotionEnabled: true
+---
+# Deliberately narrow to start: the first Freight is an older nginx (1.28.x).
+# The README widens the constraint afterwards so that a newer auto-promotion
+# candidate appears and can be rolled back from.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-35
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ~1.28.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# A second origin that the `test` Stage does NOT request. Used only for the
+# negative case: approving this Warehouse's Freight for `test` must not make
+# it promotable there (#6562).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: other
+  namespace: kargo-demo-35
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ~1.27.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# The novel bit lives in this Stage's STATUS, not its spec. A user-created
+# Promotion for Freight that is not the current auto-promotion candidate
+# (i.e. a rollback) is stamped kargo.akuity.io/auto-promotion-hold by the
+# Promotion webhook. When it succeeds, the Stage records a hold under
+# status.autoPromotionHolds keyed by origin ("Warehouse/kargo-demo"), and
+# auto-promotion stops re-promoting the newer candidate until the candidate
+# itself is promoted by a user (which lifts the hold).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: test
+  namespace: kargo-demo-35
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: compose-output
+        as: report
+        config:
+          tag: ${{ imageFrom("public.ecr.aws/nginx/nginx").Tag }}
