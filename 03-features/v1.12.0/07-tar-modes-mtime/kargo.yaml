@@ -1,0 +1,275 @@
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Project
+metadata:
+  name: kargo-demo-41
+---
+# ---------------------------------------------------------------------------
+# An in-namespace OCI registry, served over TLS with a cert-manager
+# self-signed cert, so that each archive can be pulled back out and its
+# entries inspected. oci-push speaks HTTPS; the step's insecureSkipTLSVerify
+# accepts the self-signed cert.
+# ---------------------------------------------------------------------------
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: selfsigned
+  namespace: kargo-demo-41
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: registry-tls
+  namespace: kargo-demo-41
+spec:
+  secretName: registry-tls
+  issuerRef:
+    name: selfsigned
+    kind: Issuer
+  dnsNames:
+  - registry
+  - registry.kargo-demo-41.svc
+  - registry.kargo-demo-41.svc.cluster.local
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: kargo-demo-41
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+      - name: registry
+        image: public.ecr.aws/docker/library/registry:3.1.2
+        env:
+        - name: REGISTRY_HTTP_ADDR
+          value: :5000
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: /certs/tls.crt
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: /certs/tls.key
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - name: certs
+          mountPath: /certs
+          readOnly: true
+      volumes:
+      - name: certs
+        secret:
+          secretName: registry-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: kargo-demo-41
+spec:
+  selector:
+    app: registry
+  ports:
+  - port: 5000
+    targetPort: 5000
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: ProjectConfig
+metadata:
+  name: kargo-demo-41
+  namespace: kargo-demo-41
+spec:
+  promotionPolicies:
+  - stageSelector:
+      name: fixed
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: asis
+    autoPromotionEnabled: true
+  - stageSelector:
+      name: denied
+    autoPromotionEnabled: true
+---
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Warehouse
+metadata:
+  name: kargo-demo
+  namespace: kargo-demo-41
+spec:
+  subscriptions:
+  - image:
+      repoURL: public.ecr.aws/nginx/nginx
+      constraint: ^1.29.0
+      strictSemvers: true
+      discoveryLimit: 3
+---
+# Sets fileMode, dirMode and mtime. file-write leaves files at 0600 and the
+# directories it creates at 0700, so the archive's modes can only come from
+# the tar step.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: fixed
+  namespace: kargo-demo-41
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: registry
+        value: registry.kargo-demo-41.svc.cluster.local:5000
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      # Content depends only on the Freight, never on the Promotion, so two
+      # Promotions of the same Freight render identical files.
+      - uses: file-write
+        config:
+          path: ./rendered/base/deployment.yaml
+          contents: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: nginx
+            spec:
+              template:
+                spec:
+                  containers:
+                  - name: nginx
+                    image: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: file-write
+        config:
+          path: ./rendered/base/kustomization.yaml
+          contents: |
+            resources:
+            - deployment.yaml
+      # Novel bit 1 of 2 (#7770): fileMode and dirMode replace each regular
+      # file's and directory's own mode in the archive. Quoted, so YAML
+      # doesn't read them as numbers.
+      # Novel bit 2 of 2 (#7657): mtime replaces each entry's modification
+      # time, so identical content yields an identical archive. Noon UTC so
+      # `tar tv` shows Jan 1 2000 in any local timezone.
+      - uses: tar
+        config:
+          inPath: ./rendered
+          outPath: ./bundle.tar.gz
+          gzip: true
+          fileMode: "0644"
+          dirMode: "0755"
+          mtime: "2000-01-01T12:00:00Z"
+      - uses: oci-push
+        as: push
+        config:
+          srcPath: ./bundle.tar.gz
+          destRef: ${{ vars.registry }}/bundle/${{ ctx.stage }}:${{ ctx.promotion }}
+          artifactType: application/vnd.kargo-demo.bundle.v1
+          mediaType: application/vnd.kargo-demo.bundle.layer.v1.tar+gzip
+          insecureSkipTLSVerify: true
+      - uses: compose-output
+        as: report
+        config:
+          artifact: ${{ vars.registry }}/bundle/${{ ctx.stage }}:${{ ctx.promotion }}
+          digest: ${{ outputs.push.digest }}
+---
+# The control: same files, no fileMode, dirMode or mtime. Entries keep their
+# own 0600/0700 modes and their real modification times. Ownership is
+# stripped here too (#7657 made that unconditional).
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: asis
+  namespace: kargo-demo-41
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      vars:
+      - name: registry
+        value: registry.kargo-demo-41.svc.cluster.local:5000
+      - name: imageRepo
+        value: public.ecr.aws/nginx/nginx
+      steps:
+      - uses: file-write
+        config:
+          path: ./rendered/base/deployment.yaml
+          contents: |
+            apiVersion: apps/v1
+            kind: Deployment
+            metadata:
+              name: nginx
+            spec:
+              template:
+                spec:
+                  containers:
+                  - name: nginx
+                    image: ${{ vars.imageRepo }}:${{ imageFrom(vars.imageRepo).Tag }}
+      - uses: file-write
+        config:
+          path: ./rendered/base/kustomization.yaml
+          contents: |
+            resources:
+            - deployment.yaml
+      - uses: tar
+        config:
+          inPath: ./rendered
+          outPath: ./bundle.tar.gz
+          gzip: true
+      - uses: oci-push
+        as: push
+        config:
+          srcPath: ./bundle.tar.gz
+          destRef: ${{ vars.registry }}/bundle/${{ ctx.stage }}:${{ ctx.promotion }}
+          artifactType: application/vnd.kargo-demo.bundle.v1
+          mediaType: application/vnd.kargo-demo.bundle.layer.v1.tar+gzip
+          insecureSkipTLSVerify: true
+      - uses: compose-output
+        as: report
+        config:
+          artifact: ${{ vars.registry }}/bundle/${{ ctx.stage }}:${{ ctx.promotion }}
+          digest: ${{ outputs.push.digest }}
+---
+# Negative case: 0666 matches the schema's octal pattern, but the step
+# refuses world-writable modes and fails terminally before archiving.
+apiVersion: kargo.akuity.io/v1alpha1
+kind: Stage
+metadata:
+  name: denied
+  namespace: kargo-demo-41
+spec:
+  requestedFreight:
+  - origin:
+      kind: Warehouse
+      name: kargo-demo
+    sources:
+      direct: true
+  promotionTemplate:
+    spec:
+      steps:
+      - uses: file-write
+        config:
+          path: ./rendered/README.txt
+          contents: |
+            never archived
+      - uses: tar
+        config:
+          inPath: ./rendered
+          outPath: ./bundle.tar.gz
+          fileMode: "0666"

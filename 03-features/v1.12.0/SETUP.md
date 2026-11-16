@@ -1,9 +1,10 @@
 # Kargo 1.12 Feature Validation — Setup Guide
 
-Four of the six v1.12 examples are "zero-fork": no GitHub fork, no Git
+Six of the seven v1.12 examples are "zero-fork": no GitHub fork, no Git
 credentials, and no `00-common` resources. Example 03 needs a fork and the
-shared GitHub credentials; example 05 needs Argo CD; example 04 needs
-cert-manager; example 02 needs the controller's metrics turned on. Each
+shared GitHub credentials; example 05 needs Argo CD; examples 04 and 07 need
+cert-manager; example 02 needs the controller's metrics turned on. Example
+07 also needs a build of `release-1.12` newer than v1.12.5. Each
 example's own `README.md` has per-example **Trigger** and **Expected
 outcome** sections; this page only covers the shared plumbing.
 
@@ -52,7 +53,7 @@ If you use the Tilt dev stack instead (`make hack-tilt-up`), add
 `controller.metrics.enabled: true` to `hack/tilt/values.dev.yaml` before
 bringing it up, or example 02 has nothing to scrape.
 
-> ✅ **You can now run: 01, 02, 04, 05, 06.**
+> ✅ **You can now run: 01, 02, 04, 05, 06, and 07 on a new enough build.**
 
 ## Step 3 — Fork and credentials (only needed for 03)
 
