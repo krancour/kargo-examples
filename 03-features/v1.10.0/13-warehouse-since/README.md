@@ -14,13 +14,9 @@ on tag matches and don't traverse commits.
 ## Prerequisites
 
 - A running Kargo control plane (Tilt: `make hack-tilt-up`).
-- A fork of [krancour/kargo-demo-gitops](https://github.com/krancour/kargo-demo-gitops).
-- The `kustomize` branch on your fork must contain at least one commit
-  newer than the `since:` date in `kargo.yaml` (currently
-  `2026-03-01T00:00:00Z` — adjust if your fork's history differs).
-- Read access to the repo. If your fork is private, the shared `github`
-  Secret in `00-common/kargo.yaml` provides this.
-- Replace `<github-username>` in `kargo.yaml`.
+- Outbound HTTPS to github.com. The Warehouse subscribes to the `main`
+  branch of the public [akuity/kargo](https://github.com/akuity/kargo)
+  repo, so no fork and no credentials are needed.
 
 ## Setup
 
@@ -48,28 +44,33 @@ kubectl -n kargo-demo-27 annotate warehouse kargo-demo \
 
 ```bash
 kubectl -n kargo-demo-27 get warehouse kargo-demo -o yaml \
-  | yq '.status.discoveredArtifacts.git[0].commits[].author.when'
+  | yq '.status.discoveredArtifacts.git[0].commits[].creatorDate'
 ```
 
-(or use `kubectl get … -o jsonpath`):
+All listed commit timestamps are at or after the `since:` date in
+`kargo.yaml`. The corresponding `Freight` resources reference only those
+commits.
 
-- All listed commit timestamps are `>= 2026-03-01T00:00:00Z`.
-- The list is shorter than what you'd get without the cutoff (compare by
-  removing the `since:` line, re-applying, and re-checking).
-
-The corresponding `Freight` resources reference only those bounded commits.
+`main` moves quickly, so with the committed `since:` date the list may hit
+the subscription's `discoveryLimit` (100) before it reaches the cutoff. In
+that case the limit, not `since`, is what bounds it. The toggles below show
+`since` doing the work.
 
 ## Toggling behavior
 
-To prove the cutoff is what's bounding the list, edit `kargo.yaml`:
+To prove the cutoff is what's bounding the list, patch the live Warehouse
+and re-trigger discovery each time:
 
-- Loosen: change to `since: "2024-01-01T00:00:00Z"` → many more commits
-  appear.
-- Tighten: change to `since: "2099-01-01T00:00:00Z"` → discovery returns
-  zero commits, no new Freight is produced (the Warehouse status reports
-  the empty result).
+```bash
+kubectl -n kargo-demo-27 patch warehouse kargo-demo --type=json \
+  -p '[{"op":"replace","path":"/spec/subscriptions/0/git/since","value":"<date>"}]'
+```
 
-Re-apply each time and re-trigger discovery.
+- Recent: a date a few days back → fewer than 100 commits, all at or after
+  the cutoff.
+- Tighten: `2099-01-01T00:00:00Z` → discovery returns zero commits, the
+  `Healthy` condition reports `No commits discovered`, and no new Freight
+  is produced.
 
 ## Troubleshooting
 

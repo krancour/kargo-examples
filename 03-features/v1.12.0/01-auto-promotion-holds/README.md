@@ -127,8 +127,11 @@ The sequence matters. Each step waits for the previous Promotion to succeed.
      -o custom-columns=NAME:.metadata.name,PHASE:.status.phase,HOLD:.metadata.annotations.kargo\\.akuity\\.io/auto-promotion-hold,RESUME:.metadata.annotations.kargo\\.akuity\\.io/auto-promotion-resume
    ```
 
-   The `test-rollback-*` row shows `HOLD: Warehouse/kargo-demo`. Auto-promotion's
-   own Promotions show neither annotation.
+   Kargo names every Promotion itself (`test.<id>.<freight>`), ignoring the
+   `generateName` above, so pick out the rollback by its Freight: the row
+   ending in `$OLD`'s first seven characters, created last, shows
+   `HOLD: Warehouse/kargo-demo`. Auto-promotion's own Promotions show neither
+   annotation.
 3. Once it succeeds, the Stage records the hold:
 
    ```bash
@@ -154,13 +157,13 @@ The sequence matters. Each step waits for the previous Promotion to succeed.
      | "\(.involvedObject.name)\t\(.metadata.annotations["event.kargo.akuity.io/rollback"] // "-")"'
    ```
 
-   Only the `test-rollback-*` Promotion shows `true`.
-6. After step 4 succeeds, the `test-resume-*` Promotion carries
+   Only the rollback Promotion shows `true`.
+6. After step 4 succeeds, the resume Promotion (the newest one) carries
    `RESUME: Warehouse/kargo-demo`, `status.autoPromotionHolds` is empty
    (the key is absent), and `test` is back on the newest tag.
 7. Step 5 is rejected at admission. `kubectl create` fails with an error
-   containing `Freight is not available to this Stage`, and no
-   `test-cross-origin-*` Promotion exists.
+   containing `Freight is not available to this Stage`, and no Promotion
+   references the `other` Freight.
 
 ## Troubleshooting
 
